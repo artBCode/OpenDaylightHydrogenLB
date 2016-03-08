@@ -8,7 +8,7 @@
     <relativePath>../../commons/opendaylight</relativePath>
   </parent>
 
-  <artifactId>connectionmanager.implementation</artifactId>
+  <artifactId>connectionmanager.loadbalancer</artifactId>
   <version>0.1.1-1-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <properties>
@@ -16,9 +16,20 @@
   </properties>
   <dependencies>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
       <groupId>equinoxSDK381</groupId>
       <artifactId>org.eclipse.osgi</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>4.0.23.Final</version>
+    </dependency>
+
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>clustering.services</artifactId>
@@ -31,10 +42,7 @@
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>sal</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>sal.connection</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>protocol_plugins.openflow</artifactId>
@@ -44,14 +52,8 @@
     </dependency>
     <dependency>
       <groupId>org.opendaylight.ovsdb</groupId>
-      <artifactId>lib.table</artifactId>
-      <version>0.5.0-1-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../../../../ovsdb/ovsdb/target/ovsdb-0.5.0-1-SNAPSHOT.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.ovsdb</groupId>
-      <artifactId>lib.table.internal</artifactId>
+      <artifactId>lib.notation</artifactId>
+
       <version>0.5.0-1-SNAPSHOT</version>
       <scope>system</scope>
       <systemPath>${basedir}/../../../../ovsdb/ovsdb/target/ovsdb-0.5.0-1-SNAPSHOT.jar</systemPath>
@@ -59,7 +61,17 @@
 
     <dependency>
       <groupId>org.opendaylight.ovsdb</groupId>
-      <artifactId>plugin</artifactId>
+      <artifactId>lib.table</artifactId>
+      <version>0.5.0-1-SNAPSHOT</version>
+
+      <scope>system</scope>
+      <systemPath>${basedir}/../../../../ovsdb/ovsdb/target/ovsdb-0.5.0-1-SNAPSHOT.jar</systemPath>
+
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.ovsdb</groupId>
+      <artifactId>lib.table.internal</artifactId>
+
       <version>0.5.0-1-SNAPSHOT</version>
       <scope>system</scope>
       <systemPath>${basedir}/../../../../ovsdb/ovsdb/target/ovsdb-0.5.0-1-SNAPSHOT.jar</systemPath>
@@ -77,20 +89,25 @@
         <configuration>
           <instructions>
             <Import-Package>org.opendaylight.controller.connectionmanager,
-							org.opendaylight.controller.protocol_plugin.openflow.migration,
-							org.opendaylight.controller.clustering.services,
-							org.opendaylight.controller.sal.utils,
-							org.opendaylight.controller.sal.core,
-							org.opendaylight.controller.sal.connection,
-							org.opendaylight.controller.sal.inventory,
-							org.opendaylight.ovsdb.plugin,
-							org.opendaylight.ovsdb.lib.table,
-							org.opendaylight.ovsdb.lib.table.internal,
-							org.eclipse.osgi.framework.console,
-							org.osgi.framework,
-							org.slf4j,
-							org.apache.felix.dm</Import-Package>
-            <Bundle-Activator>org.opendaylight.controller.connectionmanager.internal.Activator</Bundle-Activator>
+                            org.opendaylight.controller.protocol_plugin.openflow.migration,
+                            org.opendaylight.controller.sal.flowprogrammer,
+                            org.opendaylight.controller.clustering.services,
+                            org.opendaylight.controller.sal.utils,
+                            org.opendaylight.controller.sal.core,
+                            org.opendaylight.controller.sal.connection,
+                            org.opendaylight.controller.sal.inventory,
+                            org.opendaylight.controller.sal.match,
+                            org.opendaylight.controller.sal.action,
+                            org.opendaylight.ovsdb.plugin,
+                            org.opendaylight.ovsdb.lib.table,
+                            org.opendaylight.ovsdb.lib.table.internal,
+                            org.opendaylight.ovsdb.lib.notation,
+                            org.eclipse.osgi.framework.console,
+                            org.osgi.framework,
+                            org.slf4j,
+                            org.apache.felix.dm</Import-Package>
+
+            <Bundle-Activator>org.opendaylight.controller.connectionmanager.loadbalancer.Activator</Bundle-Activator>
           </instructions>
           <manifestLocation>${project.basedir}/META-INF</manifestLocation>
         </configuration>

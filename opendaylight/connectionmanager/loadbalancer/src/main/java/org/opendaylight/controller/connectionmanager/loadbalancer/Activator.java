@@ -7,7 +7,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.opendaylight.controller.connectionmanager.internal;
+package org.opendaylight.controller.connectionmanager.loadbalancer;
 
 import java.util.Dictionary;
 import java.util.HashSet;
@@ -17,24 +17,23 @@ import java.util.Set;
 import org.opendaylight.controller.clustering.services.ICacheUpdateAware;
 import org.opendaylight.controller.clustering.services.IClusterGlobalServices;
 import org.opendaylight.controller.clustering.services.ICoordinatorChangeAware;
-import org.opendaylight.controller.connectionmanager.ConnectionMgmtScheme;
-import org.opendaylight.controller.connectionmanager.IConnectionManager;
-import org.opendaylight.controller.sal.connection.IConnectionListener;
-import org.opendaylight.controller.sal.connection.IConnectionService;
 import org.apache.felix.dm.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.opendaylight.controller.protocol_plugin.openflow.core.internal.Controller;
+import org.opendaylight.controller.protocol_plugin.openflow.migration.IControllerMigrationService;
 import org.opendaylight.controller.sal.core.ComponentActivatorAbstractBase;
-import org.opendaylight.controller.sal.inventory.IInventoryService;
-import org.opendaylight.controller.sal.inventory.IListenInventoryUpdates;
+import org.opendaylight.controller.sal.flowprogrammer.IFlowProgrammerService;
+import org.opendaylight.controller.sal.utils.GlobalConstants;
 import org.opendaylight.ovsdb.plugin.IConnectionServiceInternal;
 import org.opendaylight.ovsdb.plugin.InventoryServiceInternal;
 import org.opendaylight.ovsdb.plugin.OVSDBConfigService;
-import org.opendaylight.controller.protocol_plugin.openflow.migration.IControllerMigrationService;
-import org.opendaylight.controller.protocol_plugin.openflow.migration.ILocalityMigrationCore;
+import org.opendaylight.ovsdb.plugin.OVSDBInventoryListener;
+
 public class Activator extends ComponentActivatorAbstractBase {
     protected static final Logger logger = LoggerFactory
             .getLogger(Activator.class);
+    private final String migrationCacheName = "connectionmanager.loadbalancer.contrNodeContr";
 
 
     /**
@@ -52,7 +51,8 @@ public class Activator extends ComponentActivatorAbstractBase {
      */
     @Override
     protected Object[] getGlobalImplementations() {
-        Object[] res = { ConnectionManager.class};
+        logger.debug("getGlobalImplementations");
+        Object[] res = { ManagerLB.class};
         return res;
     }
 
@@ -66,51 +66,54 @@ public class Activator extends ComponentActivatorAbstractBase {
      */
     @Override
     protected void configureGlobalInstance(Component c, Object imp) {
-        if (imp.equals(ConnectionManager.class)) {
-            logger.debug("Activator connectionManager");
+        logger.debug("configureGlobalInstance");
+        if (imp.equals(ManagerLB.class)) {
             Dictionary<String, Object> props = new Hashtable<String, Object>();
             Set<String> propSet = new HashSet<String>();
-            for (ConnectionMgmtScheme scheme:ConnectionMgmtScheme.values()) {
-                propSet.add("connectionmanager."+scheme.name()+".nodeconnections");
-            } 
+            
+            //propSet.add(migrationCacheName);
+            propSet.add(Controller.loadStatisticsCacheName);
+            propSet.add(Controller.physicalConnectionsCacheName);
             props.put("cachenames", propSet);
+            props.put(GlobalConstants.PROTOCOLPLUGINTYPE.toString(), "OVS");
             props.put("scope", "Global");
 
-            // export the service
-            c.setInterface(new String[] { IConnectionManager.class.getName(),
-                                          IConnectionListener.class.getName(),
-                                          ICoordinatorChangeAware.class.getName(),
-                                          IListenInventoryUpdates.class.getName(),
-                                          ICacheUpdateAware.class.getName()
-                                          },
-                                          props);
-
+            // export my service or listen for notifications from another service
+            c.setInterface(new String[] {
+                    OVSDBInventoryListener.class.getName(),
+                    ICacheUpdateAware.class.getName(),
+                    INodeControllerAssociations.class.getName(),
+                    ICoordinatorChangeAware.class.getName()
+                    }, props);
+            
+            
             c.add(createServiceDependency()
                     .setService(IClusterGlobalServices.class)
                     .setCallbacks("setClusterServices", "unsetClusterServices")
-                    .setRequired(true));
-
-            c.add(createServiceDependency().setService(IConnectionService.class)
-                    .setCallbacks("setConnectionService", "unsetConnectionService")
-                    .setRequired(true));
-            c.add(createServiceDependency().setService(IInventoryService.class, "(scope=Global)")
-                    .setCallbacks("setInventoryService", "unsetInventoryService")
-                    .setRequired(true));
-            c.add(createServiceDependency().setService(IConnectionServiceInternal.class)
-                    .setCallbacks("setOvsdbConnectionService", "unsetOvsdbConnectionService")
-                    .setRequired(true));
-            c.add(createServiceDependency().setService(InventoryServiceInternal.class)
-                    .setCallbacks("setOvsdbInventoryService", "unsetOvsdbInventoryService")
                     .setRequired(true));
             c.add(createServiceDependency().setService(OVSDBConfigService.class)
                     .setCallbacks("setOvsdbConfigService", "unsetOvsdbConfigService")
                     .setRequired(true));
             
-            c.add(createServiceDependency().setService(ILocalityMigrationCore.class)
-                    .setCallbacks("setILocalityMigrationCore", "unsetILocalityMigrationCore")
-                    .setRequired(true)); 
+            c.add(createServiceDependency().setService(IConnectionServiceInternal.class)
+                    .setCallbacks("setOvsdbConnectionService", "setOvsdbConnectionService")
+                    .setRequired(true));
+            c.add(createServiceDependency().setService(InventoryServiceInternal.class)
+                    .setCallbacks("setOvsdbInventoryService", "unsetOvsdbInventoryService")
+                    .setRequired(true));
+            
+          
+           
+            c.add(createServiceDependency().setService(IControllerMigrationService.class)
+                    .setCallbacks("setIControllerMigrationService", "unsetIControllerMigrationService")
+                    .setRequired(true));
+            c.add(createServiceDependency().setService(IFlowProgrammerService.class).setCallbacks(
+                    "setIFlowProgrammerService", "unsetIFlowProgrammerService").setRequired(true));
+                
            
         }
-        
+       
+       
     }
+   
 }

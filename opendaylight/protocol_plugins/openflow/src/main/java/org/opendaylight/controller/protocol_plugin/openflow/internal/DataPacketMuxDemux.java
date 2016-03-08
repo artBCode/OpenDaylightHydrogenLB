@@ -147,6 +147,7 @@ public class DataPacketMuxDemux implements IContainerListener,
      *
      */
     void init() {
+        logger.debug("init: Listening PACKET_IN messages");
         this.controller.addMessageListener(OFType.PACKET_IN, this);
     }
 
@@ -169,6 +170,7 @@ public class DataPacketMuxDemux implements IContainerListener,
 
     @Override
     public void receive(ISwitch sw, OFMessage msg) {
+        logger.debug("receive(ISwitch sw={}, OFMessage msg={})",sw,msg);
         if (sw == null || msg == null
                 || this.pluginOutDataPacketServices == null) {
             // Something fishy, we cannot do anything
@@ -179,6 +181,7 @@ public class DataPacketMuxDemux implements IContainerListener,
         }
 
         Long ofSwitchID = Long.valueOf(sw.getId());
+        
         try {
             Node n = new Node(Node.NodeIDType.OPENFLOW, ofSwitchID);
             if (!connectionOutService.isLocal(n)) {
@@ -271,6 +274,7 @@ public class DataPacketMuxDemux implements IContainerListener,
 
     @Override
     public void transmitDataPacket(RawPacket outPkt) {
+        logger.debug("transmitDataPacket(RawPacket outPkt)");
         // Sanity check area
         if (outPkt == null) {
             logger.debug("outPkt is null!");
@@ -282,11 +286,11 @@ public class DataPacketMuxDemux implements IContainerListener,
             logger.debug("outPort is null! outPkt: {}", outPkt);
             return;
         }
-
+        /*
         if (!connectionOutService.isLocal(outPort.getNode())) {
             logger.debug("data packets will not be sent to {} in a non-master controller", outPort.toString());
             return;
-        }
+        }*/
 
 
         if (!outPort.getType().equals(
@@ -331,6 +335,7 @@ public class DataPacketMuxDemux implements IContainerListener,
     }
 
     public void addNode(Node node, Set<Property> props) {
+        logger.debug("addNode(Node node={}, Set<Property> props={})",node,props);
         if (node == null) {
             logger.debug("node is null!");
             return;
@@ -346,6 +351,7 @@ public class DataPacketMuxDemux implements IContainerListener,
     }
 
     public void removeNode(Node node) {
+        logger.debug("removeNode(Node node={})",node);
         if (node == null) {
             logger.debug("node is null!");
             return;
@@ -369,6 +375,9 @@ public class DataPacketMuxDemux implements IContainerListener,
     @Override
     public void containerFlowUpdated(String containerName,
             ContainerFlow previousFlow, ContainerFlow currentFlow, UpdateType t) {
+        logger.debug("containerFlowUpdated(String containerName={},ContainerFlow "
+                + "previousFlow={}, ContainerFlow currentFlow={}, UpdateType t={})",
+                containerName,previousFlow,currentFlow,t);
         if (this.container2FlowSpecs == null) {
             logger.error("container2FlowSpecs is NULL");
             return;
@@ -396,6 +405,8 @@ public class DataPacketMuxDemux implements IContainerListener,
     @Override
     public void nodeConnectorUpdated(String containerName, NodeConnector p,
             UpdateType t) {
+        logger.debug("nodeConnectorUpdated(String containerName={}, "
+                + "NodeConnector p={}, UpdateType t={})",containerName,p,t);
         if (this.nc2Container == null) {
             logger.error("nc2Container is NULL");
             return;
@@ -464,6 +475,7 @@ public class DataPacketMuxDemux implements IContainerListener,
 
     @Override
     public void containerDestroy(String containerName) {
+        logger.debug("containerDestroy(String containerName)={}",containerName);
         Set<NodeConnector> removeNodeConnectorSet = new HashSet<NodeConnector>();
         for (Map.Entry<NodeConnector, List<String>> entry : nc2Container.entrySet()) {
             List<String> ncContainers = entry.getValue();

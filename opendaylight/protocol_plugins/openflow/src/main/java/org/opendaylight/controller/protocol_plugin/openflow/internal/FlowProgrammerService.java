@@ -68,9 +68,10 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     private Map<String, Set<NodeConnector>> containerToNc;
     private ConcurrentMap<Long, Map<Integer, Long>> xid2rid;
     private int barrierMessagePriorCount = getBarrierMessagePriorCount();
-    private IPluginOutConnectionService connectionOutService;
+    private IPluginOutConnectionService connectionOutService; //has been disabled.
 
     public FlowProgrammerService() {
+        log.debug("FlowProgrammerService()");
         controller = null;
         flowProgrammerNotifiers = new ConcurrentHashMap<String, IFlowProgrammerNotifier>();
         containerToNc = new HashMap<String, Set<NodeConnector>>();
@@ -78,27 +79,33 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     }
 
     public void setController(IController core) {
+        log.debug("setController(IController core)");
         this.controller = core;
+        log.debug("after setController controller!=null is {}",this.controller!=null);
     }
 
     public void unsetController(IController core) {
+        log.debug("unsetController(IController core)");
         if (this.controller == core) {
             this.controller = null;
         }
     }
-
+    
     void setIPluginOutConnectionService(IPluginOutConnectionService s) {
+        log.debug("setIPluginOutConnectionService(IPluginOutConnectionService s)");
         connectionOutService = s;
     }
 
     void unsetIPluginOutConnectionService(IPluginOutConnectionService s) {
+        log.debug("unsetIPluginOutConnectionService(IPluginOutConnectionService s)");
         if (connectionOutService == s) {
             connectionOutService = null;
         }
     }
-
+    
     public void setFlowProgrammerNotifier(Map<String, ?> props,
             IFlowProgrammerNotifier s) {
+        log.debug("setFlowProgrammerNotifier(Map<String, ?> props,IFlowProgrammerNotifier s)");
         if (props == null || props.get("containerName") == null) {
             log.error("Didn't receive the service correct properties");
             return;
@@ -109,6 +116,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     public void unsetFlowProgrammerNotifier(Map<String, ?> props,
             IFlowProgrammerNotifier s) {
+        log.debug("unsetFlowProgrammerNotifier(Map<String, ?> props, IFlowProgrammerNotifier s)");
         if (props == null || props.get("containerName") == null) {
             log.error("Didn't receive the service correct properties");
             return;
@@ -124,9 +132,10 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     /**
      * Function called by the dependency manager when all the required
      * dependencies are satisfied
-     *
+     * 
      */
     void init() {
+        log.debug("init()");
         this.controller.addMessageListener(OFType.FLOW_REMOVED, this);
         this.controller.addMessageListener(OFType.ERROR, this);
         registerWithOSGIConsole();
@@ -136,64 +145,83 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * Function called by the dependency manager when at least one dependency
      * become unsatisfied or when the component is shutting down because for
      * example bundle is being stopped.
-     *
+     * 
      */
     void destroy() {
+        log.debug("destroy()");
     }
 
     /**
      * Function called by dependency manager after "init ()" is called and after
      * the services provided by the class are registered in the service registry
-     *
+     * 
      */
     void start() {
+        log.debug("start()");
     }
 
     /**
      * Function called by the dependency manager before the services exported by
      * the component are unregistered, this will be followed by a "destroy ()"
      * calls
-     *
+     * 
      */
     void stop() {
+        log.debug("stop()");
     }
 
     @Override
     public Status addFlow(Node node, Flow flow) {
+        log.debug("addFlow(Node node={}, Flow flow={})",node,flow);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Add flow will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Add flow will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        } */
 
         return addFlowInternal(node, flow, 0);
     }
 
     @Override
     public Status modifyFlow(Node node, Flow oldFlow, Flow newFlow) {
+        log.debug("modifyFlow(Node node={}, Flow oldFlow={}, Flow newFlow={})",node,oldFlow,newFlow);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Modify flow will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Modify flow will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         return modifyFlowInternal(node, oldFlow, newFlow, 0);
     }
 
     @Override
     public Status removeFlow(Node node, Flow flow) {
+        log.debug("removeFlow(Node node={}, Flow flow={})",node,flow);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Remove flow will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Remove flow will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         return removeFlowInternal(node, flow, 0);
     }
 
     @Override
     public Status addFlowAsync(Node node, Flow flow, long rid) {
+        log.debug("addFlowAsync(Node node={}, Flow flow={}, long rid={})",node,flow,rid);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Add flow Async will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Add flow Async will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         return addFlowInternal(node, flow, rid);
     }
@@ -201,25 +229,35 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     @Override
     public Status modifyFlowAsync(Node node, Flow oldFlow, Flow newFlow,
             long rid) {
+        log.debug("modifyFlowAsync(Node node={}, Flow oldFlow={}, Flow newFlow={},long rid={})",
+                node,oldFlow,newFlow,rid);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Modify flow async will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Modify flow async will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         return modifyFlowInternal(node, oldFlow, newFlow, rid);
     }
 
     @Override
     public Status removeFlowAsync(Node node, Flow flow, long rid) {
+        log.debug("removeFlowAsync(Node node={}, Flow flow={}, long rid={})",node,flow,rid);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Remove flow async will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Remove flow async will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        } */
 
         return removeFlowInternal(node, flow, rid);
     }
 
     private Status addFlowInternal(Node node, Flow flow, long rid) {
+        log.debug("addFlowInternal(Node node={}, Flow flow={}, long rid={})",node,flow,rid);
         String action = "add";
         if (!node.getType().equals(NodeIDType.OPENFLOW)) {
             return new Status(StatusCode.NOTACCEPTABLE, errorString("send",
@@ -264,25 +302,30 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     /*
      * Method which runs openflow 1.0 specific validation on the requested flow
-     * This validation is needed because the openflow switch will silently accept
-     * the request and install only the applicable match fields
+     * This validation is needed because the openflow switch will silently
+     * accept the request and install only the applicable match fields
      */
     private Status validateFlow(Flow flow) {
+        log.debug("validateFlow(Flow flow={})",flow);
         Match m = flow.getMatch();
         boolean isIPEthertypeSet = m.isPresent(MatchType.DL_TYPE)
-                && (m.getField(MatchType.DL_TYPE).getValue().equals(EtherTypes.IPv4.shortValue()) || m
-                        .getField(MatchType.DL_TYPE).getValue().equals(EtherTypes.IPv6.shortValue()));
-
+                && (m.getField(MatchType.DL_TYPE).getValue()
+                        .equals(EtherTypes.IPv4.shortValue()) || m
+                        .getField(MatchType.DL_TYPE).getValue()
+                        .equals(EtherTypes.IPv6.shortValue()));
         // network address check
-        if ((m.isPresent(MatchType.NW_SRC) || m.isPresent(MatchType.NW_DST)) && !isIPEthertypeSet) {
-            return new Status(StatusCode.NOTACCEPTABLE,
+        if ((m.isPresent(MatchType.NW_SRC) || m.isPresent(MatchType.NW_DST))
+                && !isIPEthertypeSet) {
+            return new Status(
+                    StatusCode.NOTACCEPTABLE,
                     "The match on network source or destination address cannot be accepted if the match "
-                     + "on proper ethertype is missing");
+                            + "on proper ethertype is missing");
         }
 
         // transport protocol check
         if (m.isPresent(MatchType.NW_PROTO) && !isIPEthertypeSet) {
-            return new Status(StatusCode.NOTACCEPTABLE,
+            return new Status(
+                    StatusCode.NOTACCEPTABLE,
                     "The match on network protocol cannot be accepted if the match on proper ethertype is missing");
         }
 
@@ -296,7 +339,10 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
         return new Status(StatusCode.SUCCESS);
     }
 
-    private Status modifyFlowInternal(Node node, Flow oldFlow, Flow newFlow, long rid) {
+    private Status modifyFlowInternal(Node node, Flow oldFlow, Flow newFlow,
+            long rid) {
+        log.debug("modifyFlowInternal(Node node={}, Flow oldFlow={}, Flow newFlow={}, long rid={})",
+                node,oldFlow,newFlow,rid);
         String action = "modify";
         if (!node.getType().equals(NodeIDType.OPENFLOW)) {
             return new Status(StatusCode.NOTACCEPTABLE, errorString("send",
@@ -376,6 +422,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     }
 
     private Status removeFlowInternal(Node node, Flow flow, long rid) {
+        log.debug("removeFlowInternal(Node node={}, Flow flow={}, long rid={})",node,flow,rid);
         String action = "remove";
         if (!node.getType().equals(NodeIDType.OPENFLOW)) {
             return new Status(StatusCode.NOTACCEPTABLE, errorString("send",
@@ -413,15 +460,20 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public Status removeAllFlows(Node node) {
+        log.debug("removeAllFlows(Node node={})",node);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("Remove all flows will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("Remove all flows will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         return new Status(StatusCode.SUCCESS);
     }
 
     private String errorString(String phase, String action, String cause) {
+        log.debug("errorString(String phase={}, String action={}, String cause={})",phase,action,cause);
         return "Failed to "
                 + ((phase != null) ? phase + " the " + action
                         + " flow message: " : action + " the flow: ") + cause;
@@ -429,6 +481,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public void receive(ISwitch sw, OFMessage msg) {
+        log.debug("receive(ISwitch sw={}, OFMessage msg={})",sw,msg);
         if (msg instanceof OFFlowRemoved) {
             handleFlowRemovedMessage(sw, (OFFlowRemoved) msg);
         } else if (msg instanceof OFError) {
@@ -437,6 +490,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     }
 
     private void handleFlowRemovedMessage(ISwitch sw, OFFlowRemoved msg) {
+        log.debug("handleFlowRemovedMessage(ISwitch sw={}, OFFlowRemoved msg={})",sw,msg);
         Node node = NodeCreator.createOFNode(sw.getId());
         Flow flow = new FlowConverter(msg.getMatch(),
                 new ArrayList<OFAction>(0)).getFlow(node);
@@ -461,13 +515,15 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
              */
             if (inPort == null
                     || container.equals(GlobalConstants.DEFAULT.toString())
-                    || (containerToNc.containsKey(container) && containerToNc.get(container).contains(inPort))) {
+                    || (containerToNc.containsKey(container) && containerToNc
+                            .get(container).contains(inPort))) {
                 notifier.flowRemoved(node, flow);
             }
         }
     }
 
     private void handleErrorMessage(ISwitch sw, OFError errorMsg) {
+        log.debug("handleErrorMessage(ISwitch sw={}, OFError errorMsg={})",sw,errorMsg);
         Node node = NodeCreator.createOFNode(sw.getId());
         OFMessage offendingMsg = errorMsg.getOffendingMsg();
         Integer xid;
@@ -494,24 +550,31 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
         for (Map.Entry<String, IFlowProgrammerNotifier> containerNotifier : flowProgrammerNotifiers
                 .entrySet()) {
             IFlowProgrammerNotifier notifier = containerNotifier.getValue();
-            notifier.flowErrorReported(node, rid, Utils.getOFErrorString(errorMsg));
+            notifier.flowErrorReported(node, rid,
+                    Utils.getOFErrorString(errorMsg));
         }
     }
 
     @Override
     public void tagUpdated(String containerName, Node n, short oldTag,
             short newTag, UpdateType t) {
+        log.debug("tagUpdated(String containerName={}, Node n={}, short oldTag={},"
+                + "short newTag={}, UpdateType t={})",containerName,n,oldTag,newTag,t);
 
     }
 
     @Override
     public void containerFlowUpdated(String containerName,
             ContainerFlow previousFlow, ContainerFlow currentFlow, UpdateType t) {
+        log.debug("containerFlowUpdated(String containerName={}, ContainerFlow previousFlow={}, "
+                + "ContainerFlow currentFlow={}, UpdateType t={})",containerName,previousFlow,currentFlow,t);
     }
 
     @Override
     public void nodeConnectorUpdated(String containerName, NodeConnector p,
             UpdateType type) {
+        log.debug("nodeConnectorUpdated(String containerName={}, NodeConnector p={}, UpdateType type={})",
+                containerName,p,type);
         switch (type) {
         case ADDED:
             if (!containerToNc.containsKey(containerName)) {
@@ -533,15 +596,19 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public void containerModeUpdated(UpdateType t) {
+        log.debug("containerModeUpdated(UpdateType t={})",t);
 
     }
 
     @Override
     public Status syncSendBarrierMessage(Node node) {
-        if (!connectionOutService.isLocal(node)) {
-            log.debug("Sync Send Barrier will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+        log.debug("syncSendBarrierMessage(Node node={})",node);
+        /*if (!connectionOutService.isLocal(node)) {
+           log.debug("Sync Send Barrier will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        }*/
 
         if (!node.getType().equals(NodeIDType.OPENFLOW)) {
             return new Status(StatusCode.NOTACCEPTABLE,
@@ -566,10 +633,14 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public Status asyncSendBarrierMessage(Node node) {
+        log.debug("asyncSendBarrierMessage(Node node={})",node);
+        /*
         if (!connectionOutService.isLocal(node)) {
-            log.debug("ASync Send Barrier will not be processed in a non-master controller for node " + node);
-            return new Status(StatusCode.NOTALLOWED, "This is not the master controller for " + node);
-        }
+            log.debug("ASync Send Barrier will not be processed in a non-master controller for node "
+                    + node);
+            return new Status(StatusCode.NOTALLOWED,
+                    "This is not the master controller for " + node);
+        } */
 
         if (!node.getType().equals(NodeIDType.OPENFLOW)) {
             return new Status(StatusCode.NOTACCEPTABLE,
@@ -598,7 +669,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * for sync purpose. An unique Request ID associated with the message is
      * passed down by the caller. The Request ID will be returned to the caller
      * when an error message is received from the switch.
-     *
+     * 
      * @param node
      *            The node
      * @param msg
@@ -610,6 +681,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * @return result
      */
     private Object asyncMsgSend(Node node, ISwitch sw, OFMessage msg, long rid) {
+        log.debug("asyncMsgSend(Node node={}, ISwitch sw={}, OFMessage msg={}, long rid={})",node,sw,msg,rid);
         Object result = Boolean.TRUE;
         long swid = (Long) node.getID();
         int xid;
@@ -634,10 +706,11 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * A number of async messages are sent followed by a synchronous Barrier
      * message. This method returns the maximum async messages that can be sent
      * before the Barrier message.
-     *
+     * 
      * @return The max count of async messages sent prior to Barrier message
      */
     private int getBarrierMessagePriorCount() {
+        log.debug("getBarrierMessagePriorCount()");
         String count = System.getProperty("of.barrierMessagePriorCount");
         int rv = 100;
 
@@ -654,7 +727,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     /**
      * This method returns the message Request ID previously assigned by the
      * caller for a given OF message xid
-     *
+     * 
      * @param swid
      *            The switch id
      * @param xid
@@ -662,6 +735,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * @return The Request ID
      */
     private Long getMessageRid(long swid, Integer xid) {
+        log.debug("getMessageRid(long swid={}, Integer xid={})",swid,xid);
         Long rid = null;
 
         if (xid == null) {
@@ -678,12 +752,13 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     /**
      * This method returns a copy of outstanding xid to rid mappings.for a given
      * switch
-     *
+     * 
      * @param swid
      *            The switch id
      * @return a copy of xid2rid mappings
      */
     public Map<Integer, Long> getSwXid2Rid(long swid) {
+        log.debug("getSwXid2Rid(long swid={})",swid);
         Map<Integer, Long> swxid2rid = this.xid2rid.get(swid);
 
         if (swxid2rid != null) {
@@ -695,7 +770,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     /**
      * Adds xid to rid mapping to the local DB
-     *
+     * 
      * @param swid
      *            The switch id
      * @param xid
@@ -704,6 +779,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      *            The message Request ID
      */
     private void addXid2Rid(long swid, int xid, long rid) {
+        log.debug("addXid2Rid(long swid={}, int xid={}, long rid={})",swid,xid,rid);
         Map<Integer, Long> swxid2rid = this.xid2rid.get(swid);
         if (swxid2rid != null) {
             swxid2rid.put(xid, rid);
@@ -713,13 +789,14 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     /**
      * When an Error message is received, this method will be invoked to remove
      * the offending xid from the local DB.
-     *
+     * 
      * @param swid
      *            The switch id
      * @param xid
      *            The OF message xid
      */
     private void removeXid2Rid(long swid, int xid) {
+        log.debug("removeXid2Rid(long swid={}, int xid={})",swid,xid);
         Map<Integer, Long> swxid2rid = this.xid2rid.get(swid);
         if (swxid2rid != null) {
             swxid2rid.remove(xid);
@@ -728,7 +805,7 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     /**
      * Convert various result into Status
-     *
+     * 
      * @param result
      *            The returned result from previous action
      * @param action
@@ -738,31 +815,32 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
      * @return Status
      */
     private Status getStatusInternal(Object result, String action, long rid) {
+        log.debug("getStatusInternal(Object result={}, String action={}, long rid={})",result,action,rid);
         if (result instanceof Boolean) {
             return ((Boolean) result == Boolean.TRUE) ? new Status(
-                    StatusCode.SUCCESS, rid) : new Status(
-                    StatusCode.TIMEOUT, errorString(null, action,
-                            "Request Timed Out"));
+                    StatusCode.SUCCESS, rid) : new Status(StatusCode.TIMEOUT,
+                    errorString(null, action, "Request Timed Out"));
         } else if (result instanceof Status) {
             return (Status) result;
         } else if (result instanceof OFError) {
             OFError res = (OFError) result;
-            return new Status(StatusCode.INTERNALERROR, errorString(
-                    "program", action, Utils.getOFErrorString(res)));
+            return new Status(StatusCode.INTERNALERROR, errorString("program",
+                    action, Utils.getOFErrorString(res)));
         } else {
-            return new Status(StatusCode.INTERNALERROR, errorString(
-                    "send", action, "Internal Error"));
+            return new Status(StatusCode.INTERNALERROR, errorString("send",
+                    action, "Internal Error"));
         }
     }
 
     /**
      * When a Barrier reply is received, this method will be invoked to clear
      * the local DB
-     *
+     * 
      * @param swid
      *            The switch id
      */
     private void clearXid2Rid(long swid) {
+        log.debug("clearXid2Rid(long swid={})",swid);
         Map<Integer, Long> swxid2rid = this.xid2rid.get(swid);
         if (swxid2rid != null) {
             swxid2rid.clear();
@@ -771,7 +849,8 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public void updateNode(Node node, UpdateType type, Set<Property> props) {
-        long swid = (Long)node.getID();
+        log.debug("updateNode(Node node={}, UpdateType type={}, Set<Property> props={})",node,type,props);
+        long swid = (Long) node.getID();
 
         switch (type) {
         case ADDED:
@@ -790,9 +869,12 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     @Override
     public void updateNodeConnector(NodeConnector nodeConnector,
             UpdateType type, Set<Property> props) {
+        log.debug("updateNodeConnector(NodeConnector nodeConnector={}, UpdateType type={},"
+                + " Set<Property> props={})",nodeConnector,type,props);
     }
 
     private void registerWithOSGIConsole() {
+        log.debug("registerWithOSGIConsole()");
         BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass())
                 .getBundleContext();
         bundleContext.registerService(CommandProvider.class.getName(), this,
@@ -848,11 +930,13 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
 
     @Override
     public void containerCreate(String containerName) {
+        log.debug("containerCreate(String containerName={})",containerName);
         // do nothing
     }
 
     @Override
     public void containerDestroy(String containerName) {
+        log.debug("containerDestroy(String containerName={})",containerName);
         containerToNc.remove(containerName);
     }
 }

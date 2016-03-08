@@ -12,11 +12,13 @@
   <version>0.4.1-1-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <properties>
+    <checkstyle.skip>true</checkstyle.skip>
     <!-- Sonar properties using jacoco to retrieve integration test results -->
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.Reportpath>target/jacoco.exec</sonar.jacoco.Reportpath>
     <sonar.jacoco.itReportPath>target/jacoco-it.exec</sonar.jacoco.itReportPath>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>equinoxSDK381</groupId>

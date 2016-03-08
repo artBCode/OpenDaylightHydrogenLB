@@ -78,6 +78,7 @@ public class FlowProgrammerNotifier implements IFlowProgrammerNotifier {
 
     @Override
     public void flowRemoved(Node node, Flow flow) {
+        logger.debug("flowRemoved(Node node={}, Flow flow={})",node,flow);
         if (!connectionOutService.isLocal(node)) {
             logger.debug("flow removed will not be notified in a non-master controller for node "+node);
             return;
@@ -92,6 +93,7 @@ public class FlowProgrammerNotifier implements IFlowProgrammerNotifier {
 
     @Override
     public void flowErrorReported(Node node, long rid, Object err) {
+        logger.debug("flowErrorReported(Node node={}, long rid={}, Object err={})",node,rid,err);
         if (!connectionOutService.isLocal(node)) {
             logger.debug("flow error will not be notified in a non-master controller for node "+node);
             return;

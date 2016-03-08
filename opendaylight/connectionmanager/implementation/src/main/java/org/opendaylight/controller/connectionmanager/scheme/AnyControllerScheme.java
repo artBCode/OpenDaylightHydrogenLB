@@ -13,12 +13,15 @@ import java.util.Set;
 import org.opendaylight.controller.clustering.services.IClusterGlobalServices;
 import org.opendaylight.controller.connectionmanager.ConnectionMgmtScheme;
 import org.opendaylight.controller.sal.core.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class AnyControllerScheme extends AbstractScheme {
     private static AbstractScheme myScheme= null;
-
+    private static final Logger log = LoggerFactory.getLogger(AbstractScheme.class);
     protected AnyControllerScheme(IClusterGlobalServices clusterServices) {
         super(clusterServices, ConnectionMgmtScheme.ANY_CONTROLLER_ONE_MASTER);
+        
     }
 
     public static AbstractScheme getScheme(IClusterGlobalServices clusterServices) {
@@ -31,7 +34,13 @@ class AnyControllerScheme extends AbstractScheme {
     @Override
     public boolean isConnectionAllowedInternal(Node node) {
         Set <InetAddress> controllers = nodeConnections.get(node);
-        if (controllers == null || controllers.size() == 0) return true;
-        return (controllers.size() == 1 && controllers.contains(clusterServices.getMyAddress()));
+        // if the node is not connected to any controller
+        if (controllers == null || controllers.size() == 0){ 
+            log.debug("isConnectionAllowedInternal returns true.");
+            return true;
+        }
+        boolean res= (controllers.size() == 1 && controllers.contains(clusterServices.getMyAddress()));
+        log.debug("isConnectionAllowedInternal returns {}",String.valueOf(res));
+        return res;
     }
 }

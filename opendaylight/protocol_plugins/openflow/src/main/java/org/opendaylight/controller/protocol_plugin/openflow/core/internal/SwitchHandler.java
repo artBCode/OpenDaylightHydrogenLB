@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.opendaylight.controller.protocol_plugin.openflow.core.IController;
 import org.opendaylight.controller.protocol_plugin.openflow.core.IMessageReadWrite;
 import org.opendaylight.controller.protocol_plugin.openflow.core.ISwitch;
+import org.opendaylight.controller.protocol_plugin.openflow.migration.Util;
 import org.openflow.protocol.OFBarrierReply;
 import org.openflow.protocol.OFBarrierRequest;
 import org.openflow.protocol.OFEchoReply;
@@ -350,6 +352,7 @@ public class SwitchHandler implements ISwitch {
     }
 
     public void handleMessages() {
+        logger.trace("handleMessages has been called");
         List<OFMessage> msgs = null;
 
         try {
@@ -363,10 +366,12 @@ public class SwitchHandler implements ISwitch {
         if (msgs == null) {
             return;
         }
+        
         for (OFMessage msg : msgs) {
             logger.trace("Message received: {}", msg);
             this.lastMsgReceivedTimeStamp = System.currentTimeMillis();
             OFType type = msg.getType();
+            
             switch (type) {
             case HELLO:
                 sendFeaturesRequest();
@@ -492,8 +497,7 @@ public class SwitchHandler implements ISwitch {
                     (isOperational() ? HexString.toHexString(sid) : "unknown"));
             return;
         }
-        logger.debug("Caught exception: ", e);
-
+        logger.trace("Caught exception: ", Util.exceptionToString(e));
         // notify core of this error event and disconnect the switch
         ((Controller) core).takeSwitchEventError(this);
 
@@ -611,7 +615,7 @@ public class SwitchHandler implements ISwitch {
             result = submit.get(responseTimerValue, TimeUnit.MILLISECONDS);
             return result;
         } catch (Exception e) {
-            logger.warn("Timeout while waiting for {} replies from {}",
+            logger.debug("Timeout while waiting for {} replies from {}",
                     req.getType(), (isOperational() ? HexString.toHexString(sid) : "unknown"));
             result = null; // to indicate timeout has occurred
             worker.wakeup();
@@ -765,6 +769,11 @@ public class SwitchHandler implements ISwitch {
         public void run() {
             running = true;
             while (running) {
+                if (transmitQ.size() > 100000
+                        && transmitQ.size() % 100000 == 0)
+                    logger.warn(
+                            "There are still other {} events in the outgoing queue.",
+                            transmitQ.size());
                 try {
                     PriorityMessage pmsg = transmitQ.take();
                     msgReadWriteService.asyncSend(pmsg.msg);
@@ -946,4 +955,6 @@ public class SwitchHandler implements ISwitch {
                 .setLength((short) OFFlowMod.MINIMUM_LENGTH);
         asyncFastSend(flowMod);
     }
+    
+    
 }

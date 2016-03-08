@@ -215,6 +215,7 @@ public class ForwardingRulesManager implements
      */
     private FlowEntryDistributionOrderFutureTask distributeWorkOrder(FlowEntryInstall e, FlowEntryInstall u,
             UpdateType t) {
+     log.trace("distributeWorkOrder(FlowEntryInstall e={}, FlowEntryInstall u={},UpdateType t={})",e,u,t );
         // A null entry it's an unexpected condition, anyway it's safe to keep
         // the handling local
         if (e == null) {
@@ -229,6 +230,7 @@ public class ForwardingRulesManager implements
             // First create the monitor job
             FlowEntryDistributionOrderFutureTask ret = new FlowEntryDistributionOrderFutureTask(fe);
             logsync.trace("Node {} not local so sending fe {}", n, fe);
+    log.trace("Node {} not local so sending fe {}", n, fe);
             workMonitor.put(fe, ret);
             if (t.equals(UpdateType.CHANGED)) {
                 // Then distribute the work
@@ -238,11 +240,14 @@ public class ForwardingRulesManager implements
                 workOrder.put(fe, e);
             }
             logsync.trace("WorkOrder requested");
+    log.trace("WorkOrder requested");
             // Now create an Handle to monitor the execution of the operation
             return ret;
         }
 
         logsync.trace("Node {} could be local. so processing Entry:{} UpdateType:{}", n, e, t);
+    log.trace("Node {} could be local. so processing Entry:{} UpdateType:{}", n, e, t);
+    log.trace("Node {} could be local. so processing Entry:{} UpdateType:{}", n, e, t);
         return null;
     }
 
@@ -254,6 +259,7 @@ public class ForwardingRulesManager implements
      * @return a Status object representing the result of the validation
      */
     private Status validateEntry(FlowEntry flowEntry) {
+     log.trace("validateEntry(FlowEntry flowEntry={})",flowEntry );
         // Node presence check
         Node node = flowEntry.getNode();
         if (!switchManager.getNodes().contains(node)) {
@@ -310,6 +316,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status addEntry(FlowEntry flowEntry, boolean async) {
+     log.trace("addEntry(FlowEntry flowEntry={}, boolean async={})",flowEntry,async );
 
         // Sanity Check
         if (flowEntry == null || flowEntry.getNode() == null || flowEntry.getFlow() == null) {
@@ -429,6 +436,7 @@ public class ForwardingRulesManager implements
      *         this container
      */
     private List<FlowEntryInstall> deriveInstallEntries(FlowEntry request, List<ContainerFlow> cFlowList) {
+     log.trace("deriveInstallEntries(FlowEntry request={}, List<ContainerFlow> cFlowList={})",request,cFlowList );
         List<FlowEntryInstall> toInstallList = new ArrayList<FlowEntryInstall>(1);
 
         if (container.getContainerFlows() == null || container.getContainerFlows().isEmpty()) {
@@ -459,6 +467,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status modifyEntry(FlowEntry currentFlowEntry, FlowEntry newFlowEntry, boolean async) {
+     log.trace("modifyEntry(FlowEntry currentFlowEntry={}, FlowEntry newFlowEntry={}, boolean async={})",currentFlowEntry,newFlowEntry,async );
         Status retExt;
 
         // Sanity checks
@@ -638,6 +647,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status modifyEntryInternal(FlowEntryInstall currentEntries, FlowEntryInstall newEntries, boolean async) {
+     log.trace("modifyEntryInternal(FlowEntryInstall currentEntries={}, FlowEntryInstall newEntries={}, boolean async={})",currentEntries,newEntries,async );
         Status status = new Status(StatusCode.UNDEFINED);
         FlowEntryDistributionOrderFutureTask futureStatus =
                 distributeWorkOrder(currentEntries, newEntries, UpdateType.CHANGED);
@@ -676,6 +686,7 @@ public class ForwardingRulesManager implements
     }
 
     private Status modifyEntryInHw(FlowEntryInstall currentEntries, FlowEntryInstall newEntries, boolean async) {
+     log.trace("modifyEntryInHw(FlowEntryInstall currentEntries={}, FlowEntryInstall newEntries={}, boolean async={})",currentEntries,newEntries,async );
         return async ? programmer.modifyFlowAsync(currentEntries.getNode(), currentEntries.getInstall().getFlow(),
                 newEntries.getInstall().getFlow()) : programmer.modifyFlow(currentEntries.getNode(), currentEntries
                 .getInstall().getFlow(), newEntries.getInstall().getFlow());
@@ -693,6 +704,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status removeEntry(FlowEntry flowEntry, boolean async) {
+     log.trace("removeEntry(FlowEntry flowEntry={}, boolean async={})",flowEntry,async );
         Status error = new Status(null, null);
 
         // Sanity Check
@@ -758,6 +770,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status removeEntryInternal(FlowEntryInstall entry, boolean async) {
+     log.trace("removeEntryInternal(FlowEntryInstall entry={}, boolean async={})",entry,async );
         Status status = new Status(StatusCode.UNDEFINED);
         FlowEntryDistributionOrderFutureTask futureStatus = distributeWorkOrder(entry, null, UpdateType.REMOVED);
         if (futureStatus != null) {
@@ -795,6 +808,7 @@ public class ForwardingRulesManager implements
     }
 
     private Status removeEntryInHw(FlowEntryInstall entry, boolean async) {
+     log.trace("removeEntryInHw(FlowEntryInstall entry={}, boolean async={})",entry,async );
         return async ? programmer.removeFlowAsync(entry.getNode(), entry.getInstall().getFlow()) : programmer
                 .removeFlow(entry.getNode(), entry.getInstall().getFlow());
     }
@@ -815,6 +829,7 @@ public class ForwardingRulesManager implements
      *         contain the unique id assigned to this request
      */
     private Status addEntryInternal(FlowEntryInstall entry, boolean async) {
+     log.trace("addEntryInternal(FlowEntryInstall entry={}, boolean async={})",entry,async );
         Status status = new Status(StatusCode.UNDEFINED);
         FlowEntryDistributionOrderFutureTask futureStatus = distributeWorkOrder(entry, null, UpdateType.ADDED);
         if (futureStatus != null) {
@@ -849,6 +864,7 @@ public class ForwardingRulesManager implements
     }
 
     private Status addEntryInHw(FlowEntryInstall entry, boolean async) {
+     log.trace("addEntryInHw(FlowEntryInstall entry={}, boolean async={})",entry,async );
         // Install the flow on the network node
         return async ? programmer.addFlowAsync(entry.getNode(), entry.getInstall().getFlow()) : programmer.addFlow(
                 entry.getNode(), entry.getInstall().getFlow());
@@ -865,6 +881,7 @@ public class ForwardingRulesManager implements
      *         otherwise
      */
     private boolean entryConflictsWithContainerFlows(FlowEntry flowEntry) {
+     log.trace("entryConflictsWithContainerFlows(FlowEntry flowEntry={})",flowEntry );
         List<ContainerFlow> cFlowList = container.getContainerFlows();
 
         // Validity check and avoid unnecessary computation
@@ -884,6 +901,7 @@ public class ForwardingRulesManager implements
     }
 
     private ConcurrentMap.Entry<Integer, FlowConfig> getStaticFlowEntry(String name, Node node) {
+     log.trace("getStaticFlowEntry(String name={}, Node node={})",name,node );
         for (ConcurrentMap.Entry<Integer, FlowConfig> flowEntry : staticFlows.entrySet()) {
             FlowConfig flowConfig = flowEntry.getValue();
             if (flowConfig.isByNameAndNodeIdEqual(name, node)) {
@@ -894,6 +912,7 @@ public class ForwardingRulesManager implements
     }
 
     private void updateIndexDatabase(FlowEntryInstall entry, boolean add) {
+     log.trace("updateIndexDatabase(FlowEntryInstall entry={}, boolean add={})",entry,add );
         // Update node indexed flow database
         updateNodeFlowsDB(entry, add);
 
@@ -905,6 +924,7 @@ public class ForwardingRulesManager implements
      * Update the node mapped flows database
      */
     private void updateSwViews(FlowEntryInstall flowEntries, boolean add) {
+     log.trace("updateSwViews(FlowEntryInstall flowEntries={}, boolean add={})",flowEntries,add );
         if (add) {
             originalSwView.put(flowEntries.getOriginal(), flowEntries.getOriginal());
             installedSwView.put(flowEntries, flowEntries);
@@ -918,6 +938,7 @@ public class ForwardingRulesManager implements
      * Update the node mapped flows database
      */
     private void updateNodeFlowsDB(FlowEntryInstall flowEntries, boolean add) {
+     log.trace("updateNodeFlowsDB(FlowEntryInstall flowEntries={}, boolean add={})",flowEntries,add );
         Node node = flowEntries.getNode();
 
         List<FlowEntryInstall> nodeIndeces = this.nodeFlows.get(node);
@@ -958,6 +979,7 @@ public class ForwardingRulesManager implements
      * Update the group name mapped flows database
      */
     private void updateGroupFlowsDB(FlowEntryInstall flowEntries, boolean add) {
+     log.trace("updateGroupFlowsDB(FlowEntryInstall flowEntries={}, boolean add={})",flowEntries,add );
         String groupName = flowEntries.getGroupName();
 
         // Flow may not be part of a group
@@ -999,6 +1021,7 @@ public class ForwardingRulesManager implements
      */
     @SuppressWarnings("unused")
     private Status removeEntry(Node node, String flowName) {
+     log.trace("removeEntry(Node node={}, String flowName={})",node,flowName );
         FlowEntryInstall target = null;
 
         // Find in database
@@ -1031,6 +1054,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status installFlowEntry(FlowEntry flowEntry) {
+     log.trace("installFlowEntry(FlowEntry flowEntry={})",flowEntry );
         Status status;
         if (isContainerModeAllowed(flowEntry)) {
             status = addEntry(flowEntry, false);
@@ -1045,6 +1069,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status installFlowEntryAsync(FlowEntry flowEntry) {
+     log.trace("installFlowEntryAsync(FlowEntry flowEntry={})",flowEntry );
         Status status;
         if (isContainerModeAllowed(flowEntry)) {
             status = addEntry(flowEntry, true);
@@ -1058,6 +1083,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status uninstallFlowEntry(FlowEntry flowEntry) {
+     log.trace("uninstallFlowEntry(FlowEntry flowEntry={})",flowEntry );
         Status status;
         if (isContainerModeAllowed(flowEntry)) {
             status = removeEntry(flowEntry, false);
@@ -1072,6 +1098,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status uninstallFlowEntryAsync(FlowEntry flowEntry) {
+     log.trace("uninstallFlowEntryAsync(FlowEntry flowEntry={})",flowEntry);
         Status status;
         if (isContainerModeAllowed(flowEntry)) {
             status = removeEntry(flowEntry, true);
@@ -1085,6 +1112,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status modifyFlowEntry(FlowEntry currentFlowEntry, FlowEntry newFlowEntry) {
+     log.trace("modifyFlowEntry(FlowEntry currentFlowEntry={}, FlowEntry newFlowEntry={})",currentFlowEntry,newFlowEntry );
         Status status = null;
         if (isContainerModeAllowed(currentFlowEntry)) {
             status = modifyEntry(currentFlowEntry, newFlowEntry, false);
@@ -1099,6 +1127,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status modifyFlowEntryAsync(FlowEntry currentFlowEntry, FlowEntry newFlowEntry) {
+     log.trace("modifyFlowEntryAsync(FlowEntry currentFlowEntry={}, FlowEntry newFlowEntry={})",currentFlowEntry,newFlowEntry );
         Status status = null;
         if (isContainerModeAllowed(currentFlowEntry)) {
             status = modifyEntry(currentFlowEntry, newFlowEntry, true);
@@ -1130,11 +1159,13 @@ public class ForwardingRulesManager implements
      *         generated
      */
     private boolean isContainerModeAllowed(FlowEntry flowEntry) {
+     log.trace("isContainerModeAllowed(FlowEntry flowEntry={})",flowEntry );
         return (!inContainerMode) ? true : flowEntry.isInternal();
     }
 
     @Override
     public Status modifyOrAddFlowEntry(FlowEntry newFlowEntry) {
+     log.trace("modifyOrAddFlowEntry(FlowEntry newFlowEntry={})",newFlowEntry );
         /*
          * Run a check on the original entries to decide whether to go with a
          * add or modify method. A loose check means only check against the
@@ -1155,6 +1186,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status modifyOrAddFlowEntryAsync(FlowEntry newFlowEntry) {
+     log.trace("modifyOrAddFlowEntryAsync(FlowEntry newFlowEntry={})",newFlowEntry );
         /*
          * Run a check on the original entries to decide whether to go with a
          * add or modify method. A loose check means only check against the
@@ -1175,6 +1207,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status uninstallFlowEntryGroup(String groupName) {
+     log.trace("uninstallFlowEntryGroup(String groupName={})",groupName );
         if (groupName == null || groupName.isEmpty()) {
             return new Status(StatusCode.BADREQUEST, "Invalid group name");
         }
@@ -1210,6 +1243,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status uninstallFlowEntryGroupAsync(String groupName) {
+     log.trace("uninstallFlowEntryGroupAsync(String groupName={})",groupName );
         if (groupName == null || groupName.isEmpty()) {
             return new Status(StatusCode.BADREQUEST, "Invalid group name");
         }
@@ -1233,6 +1267,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public boolean checkFlowEntryConflict(FlowEntry flowEntry) {
+     log.trace("checkFlowEntryConflict(FlowEntry flowEntry={})",flowEntry );
         return entryConflictsWithContainerFlows(flowEntry);
     }
 
@@ -1244,6 +1279,7 @@ public class ForwardingRulesManager implements
      * on the network node
      */
     protected void updateFlowsContainerFlow() {
+     log.trace("updateFlowsContainerFlow()" );
         Set<FlowEntry> toReInstall = new HashSet<FlowEntry>();
         // First remove all installed entries
         for (ConcurrentMap.Entry<FlowEntryInstall, FlowEntryInstall> entry : installedSwView.entrySet()) {
@@ -1263,6 +1299,7 @@ public class ForwardingRulesManager implements
     }
 
     private void nonClusterObjectCreate() {
+     log.trace("nonClusterObjectCreate()" );
         originalSwView = new ConcurrentHashMap<FlowEntry, FlowEntry>();
         installedSwView = new ConcurrentHashMap<FlowEntryInstall, FlowEntryInstall>();
         TSPolicies = new ConcurrentHashMap<String, Object>();
@@ -1275,6 +1312,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void setTSPolicyData(String policyname, Object o, boolean add) {
+     log.trace("setTSPolicyData(String policyname={}, Object o={}, boolean add={})",policyname,o,add );
 
         if (add) {
             /* Check if this policy already exists */
@@ -1299,11 +1337,13 @@ public class ForwardingRulesManager implements
 
     @Override
     public Map<String, Object> getTSPolicyData() {
+     log.trace("getTSPolicyData()" );
         return TSPolicies;
     }
 
     @Override
     public Object getTSPolicyData(String policyName) {
+     log.trace("getTSPolicyData(String policyName={})",policyName );
         if (TSPolicies.containsKey(policyName)) {
             return TSPolicies.get(policyName);
         } else {
@@ -1313,6 +1353,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<FlowEntry> getFlowEntriesForGroup(String policyName) {
+     log.trace("getFlowEntriesForGroup(String policyName={})",policyName );
         List<FlowEntry> list = new ArrayList<FlowEntry>();
         if (policyName != null && !policyName.trim().isEmpty()) {
             for (Map.Entry<FlowEntry, FlowEntry> entry : this.originalSwView.entrySet()) {
@@ -1326,6 +1367,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<FlowEntry> getInstalledFlowEntriesForGroup(String policyName) {
+     log.trace("getInstalledFlowEntriesForGroup(String policyName={})",policyName );
         List<FlowEntry> list = new ArrayList<FlowEntry>();
         if (policyName != null && !policyName.trim().isEmpty()) {
             for (Map.Entry<FlowEntryInstall, FlowEntryInstall> entry : this.installedSwView.entrySet()) {
@@ -1339,6 +1381,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void addOutputPort(Node node, String flowName, List<NodeConnector> portList) {
+     log.trace("addOutputPort(Node node={}, String flowName={}, List<NodeConnector> portList={})",node,flowName,portList );
 
         for (FlowEntryInstall flow : this.nodeFlows.get(node)) {
             if (flow.getFlowName().equals(flowName)) {
@@ -1362,6 +1405,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void removeOutputPort(Node node, String flowName, List<NodeConnector> portList) {
+     log.trace("removeOutputPort(Node node={}, String flowName={}, List<NodeConnector> portList={})" ,node,flowName,portList);
         for (FlowEntryInstall index : this.nodeFlows.get(node)) {
             FlowEntryInstall flow = this.installedSwView.get(index);
             if (flow.getFlowName().equals(flowName)) {
@@ -1389,6 +1433,7 @@ public class ForwardingRulesManager implements
      */
     @Override
     public void replaceOutputPort(Node node, String flowName, NodeConnector outPort) {
+     log.trace("replaceOutputPort(Node node={}, String flowName={}, NodeConnector outPort={})",node,flowName,outPort );
         FlowEntry currentFlowEntry = null;
         FlowEntry newFlowEntry = null;
 
@@ -1431,6 +1476,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public NodeConnector getOutputPort(Node node, String flowName) {
+     log.trace("getOutputPort(Node node={}, String flowName={})",node,flowName );
         for (FlowEntryInstall index : this.nodeFlows.get(node)) {
             FlowEntryInstall flow = this.installedSwView.get(index);
             if (flow.getFlowName().equals(flowName)) {
@@ -1445,11 +1491,13 @@ public class ForwardingRulesManager implements
     }
 
     private void cacheStartup() {
+     log.trace("cacheStartup()" );
         allocateCaches();
         retrieveCaches();
     }
 
     private void allocateCaches() {
+     log.trace("allocateCaches()" );
         if (this.clusterContainerService == null) {
             log.warn("Un-initialized clusterContainerService, can't create cache");
             return;
@@ -1497,6 +1545,7 @@ public class ForwardingRulesManager implements
 
     @SuppressWarnings({ "unchecked" })
     private void retrieveCaches() {
+     log.trace("retrieveCaches()" );
         ConcurrentMap<?, ?> map;
 
         if (this.clusterContainerService == null) {
@@ -1579,6 +1628,7 @@ public class ForwardingRulesManager implements
     }
 
     private boolean flowConfigExists(FlowConfig config) {
+     log.trace("flowConfigExists(FlowConfig config={})",config );
         // Flow name has to be unique on per node id basis
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             if (entry.getValue().isByNameAndNodeIdEqual(config)) {
@@ -1590,6 +1640,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status addStaticFlow(FlowConfig config) {
+     log.trace("addStaticFlow(FlowConfig config={})",config );
         // Configuration object validation
         Status status = config.validate();
         if (!status.isSuccess()) {
@@ -1617,6 +1668,7 @@ public class ForwardingRulesManager implements
      * @return The status of this request
      */
     private Status addStaticFlowInternal(FlowConfig config, boolean restore) {
+     log.trace("addStaticFlowInternal(FlowConfig config, boolean restore)" );
         boolean multipleFlowPush = false;
         String error;
         Status status;
@@ -1692,6 +1744,7 @@ public class ForwardingRulesManager implements
     }
 
     private void addStaticFlowsToSwitch(Node node) {
+     log.trace("addStaticFlowsToSwitch(Node node={})",node );
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             FlowConfig config = entry.getValue();
             if (config.isPortGroupEnabled()) {
@@ -1709,7 +1762,7 @@ public class ForwardingRulesManager implements
     }
 
     private void updateStaticFlowConfigsOnNodeDown(Node node) {
-        log.trace("Updating Static Flow configs on node down: {}", node);
+     log.trace("updateStaticFlowConfigsOnNodeDown(Node node={})",node );
 
         List<Integer> toRemove = new ArrayList<Integer>();
         for (Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
@@ -1739,7 +1792,7 @@ public class ForwardingRulesManager implements
     }
 
     private void updateStaticFlowConfigsOnContainerModeChange(UpdateType update) {
-        log.trace("Updating Static Flow configs on container mode change: {}", update);
+     log.trace("updateStaticFlowConfigsOnContainerModeChange(UpdateType update={})",update );
 
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             FlowConfig config = entry.getValue();
@@ -1765,6 +1818,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status removeStaticFlow(FlowConfig config) {
+     log.trace("removeStaticFlow(FlowConfig config={})",config );
         /*
          * No config.isInternal() check as NB does not take this path and GUI
          * cannot issue a delete on an internal generated flow. We need this
@@ -1800,6 +1854,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status removeStaticFlow(String name, Node node) {
+     log.trace("removeStaticFlow(String name={}, Node node={})",name,node );
         // Look for the target configuration entry
         Integer key = 0;
         FlowConfig target = null;
@@ -1842,6 +1897,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status modifyStaticFlow(FlowConfig newFlowConfig) {
+     log.trace("modifyStaticFlow(FlowConfig newFlowConfig={})",newFlowConfig );
         // Validity check for api3 entry point
         if (newFlowConfig.isInternalFlow()) {
             String msg = "Invalid operation: Controller generated flow cannot be modified";
@@ -1901,11 +1957,13 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status toggleStaticFlowStatus(String name, Node node) {
+     log.trace("toggleStaticFlowStatus(String name={}, Node node={})",name,node );
         return toggleStaticFlowStatus(getStaticFlow(name, node));
     }
 
     @Override
     public Status toggleStaticFlowStatus(FlowConfig config) {
+     log.trace("toggleStaticFlowStatus(FlowConfig config={})",config );
         if (config == null) {
             String msg = "Invalid request: null flow config";
             log.warn(msg);
@@ -1960,6 +2018,7 @@ public class ForwardingRulesManager implements
      *            refreshed. If null, all nodes static flows will be refreshed.
      */
     private void refreshClusterStaticFlowsStatus(Node node) {
+     log.trace("refreshClusterStaticFlowsStatus(Node node={})",node );
         // Refresh cluster cache
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             if (node == null || entry.getValue().getNode().equals(node)) {
@@ -1982,7 +2041,7 @@ public class ForwardingRulesManager implements
      *            inactive list
      */
     private void uninstallAllFlowEntries(boolean preserveFlowEntries) {
-        log.trace("Uninstalling all non-internal flows");
+     log.trace("uninstallAllFlowEntries(boolean preserveFlowEntries={})",preserveFlowEntries );
 
         List<FlowEntryInstall> toRemove = new ArrayList<FlowEntryInstall>();
 
@@ -2020,7 +2079,7 @@ public class ForwardingRulesManager implements
      * default container instance of FRM only when the last container is deleted
      */
     private void reinstallAllFlowEntries() {
-        log.trace("Reinstalling all inactive flows");
+     log.trace("reinstallAllFlowEntries()" );
 
         for (FlowEntry flowEntry : this.inactiveFlows.keySet()) {
             this.addEntry(flowEntry, false);
@@ -2032,11 +2091,13 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<FlowConfig> getStaticFlows() {
+     log.trace("getStaticFlows()" );
         return new ArrayList<FlowConfig>(staticFlows.values());
     }
 
     @Override
     public FlowConfig getStaticFlow(String name, Node node) {
+     log.trace("getStaticFlow(String name={}, Node node={})",name,node );
         ConcurrentMap.Entry<Integer, FlowConfig> entry = getStaticFlowEntry(name, node);
         if(entry != null) {
             return entry.getValue();
@@ -2046,6 +2107,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<FlowConfig> getStaticFlows(Node node) {
+     log.trace("getStaticFlows(Node node={})",node );
         List<FlowConfig> list = new ArrayList<FlowConfig>();
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             if (entry.getValue().onNode(node)) {
@@ -2057,6 +2119,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<String> getStaticFlowNamesForNode(Node node) {
+     log.trace("getStaticFlowNamesForNode(Node node={})",node );
         List<String> list = new ArrayList<String>();
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             if (entry.getValue().onNode(node)) {
@@ -2068,6 +2131,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public List<Node> getListNodeWithConfiguredFlows() {
+     log.trace("getListNodeWithConfiguredFlows()" );
         Set<Node> set = new HashSet<Node>();
         for (ConcurrentMap.Entry<Integer, FlowConfig> entry : staticFlows.entrySet()) {
             set.add(entry.getValue().getNode());
@@ -2076,6 +2140,7 @@ public class ForwardingRulesManager implements
     }
 
     private void loadFlowConfiguration() {
+     log.trace("loadFlowConfiguration()" );
         for (ConfigurationObject conf : configurationService.retrieveConfiguration(this, PORT_GROUP_FILE_NAME)) {
             addPortGroupConfig(((PortGroupConfig) conf).getName(), ((PortGroupConfig) conf).getMatchString(), true);
         }
@@ -2092,10 +2157,12 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status saveConfig() {
+     log.trace("saveConfig()" );
         return saveConfigInternal();
     }
 
     private Status saveConfigInternal() {
+     log.trace("saveConfigInternal()" );
         List<ConfigurationObject> nonDynamicFlows = new ArrayList<ConfigurationObject>();
 
         for (Integer ordinal : staticFlows.keySet()) {
@@ -2116,9 +2183,11 @@ public class ForwardingRulesManager implements
 
     @Override
     public void subnetNotify(Subnet sub, boolean add) {
+     log.trace("subnetNotify(Subnet sub={}, boolean add={})",sub,add );
     }
 
     private boolean programInternalFlow(boolean proactive, FlowConfig fc) {
+     log.trace("programInternalFlow(boolean proactive={}, FlowConfig fc={})",proactive,fc );
         boolean retVal = true; // program flows unless determined otherwise
         if(proactive) {
             // if the flow already exists do not program
@@ -2148,6 +2217,7 @@ public class ForwardingRulesManager implements
     private ExecutorService executor;
     @Override
     public void modeChangeNotify(final Node node, final boolean proactive) {
+     log.trace("modeChangeNotify(final Node node={}, final boolean proactive={})",node,proactive );
         Callable<Status> modeChangeCallable = new Callable<Status>() {
             @Override
             public Status call() throws Exception {
@@ -2221,7 +2291,7 @@ public class ForwardingRulesManager implements
      * @param node
      */
     private void cleanDatabaseForNode(Node node) {
-        log.trace("Cleaning Flow database for Node {}", node);
+     log.trace("cleanDatabaseForNode(Node node={})",node );
         if (nodeFlows.containsKey(node)) {
             List<FlowEntryInstall> toRemove = new ArrayList<FlowEntryInstall>(nodeFlows.get(node));
 
@@ -2232,6 +2302,7 @@ public class ForwardingRulesManager implements
     }
 
     private boolean doesFlowContainNodeConnector(Flow flow, NodeConnector nc) {
+     log.trace("doesFlowContainNodeConnector(Flow flow={}, NodeConnector nc={})",flow,nc );
         if (nc == null) {
             return false;
         }
@@ -2259,11 +2330,13 @@ public class ForwardingRulesManager implements
 
     @Override
     public void notifyNode(Node node, UpdateType type, Map<String, Property> propMap) {
-        this.pendingEvents.offer(new NodeUpdateEvent(type, node));
+     log.trace("notifyNode(Node node={}, UpdateType type={}, Map<String, Property> propMap={})",node,type,propMap );
+      this.pendingEvents.offer(new NodeUpdateEvent(type, node));
     }
 
     @Override
     public void notifyNodeConnector(NodeConnector nodeConnector, UpdateType type, Map<String, Property> propMap) {
+     log.trace("notifyNodeConnector(NodeConnector nodeConnector={}, UpdateType type={}, Map<String, Property> propMap={})",nodeConnector,type,propMap );
         boolean updateStaticFlowCluster = false;
 
         switch (type) {
@@ -2308,6 +2381,7 @@ public class ForwardingRulesManager implements
      * hardware and their status shows they were not installed yet
      */
     private boolean installFlowsOnNodeConnectorUp(NodeConnector nodeConnector) {
+     log.trace("installFlowsOnNodeConnectorUp(NodeConnector nodeConnector={})",nodeConnector );
         boolean updated = false;
         List<FlowConfig> flowConfigForNode = getStaticFlows(nodeConnector.getNode());
         for (FlowConfig flowConfig : flowConfigForNode) {
@@ -2332,6 +2406,7 @@ public class ForwardingRulesManager implements
      * flow, it updates the correspondent configuration.
      */
     private boolean removeFlowsOnNodeConnectorDown(NodeConnector nodeConnector) {
+     log.trace("removeFlowsOnNodeConnectorDown(NodeConnector nodeConnector={})",nodeConnector );
         boolean updated = false;
         List<FlowEntryInstall> nodeFlowEntries = nodeFlows.get(nodeConnector.getNode());
         if (nodeFlowEntries == null) {
@@ -2360,6 +2435,7 @@ public class ForwardingRulesManager implements
     }
 
     private FlowConfig getDerivedFlowConfig(FlowConfig original, String configName, Short port) {
+     log.trace("getDerivedFlowConfig(FlowConfig original={}, String configName={}, Short port={})",original,configName,port );
         FlowConfig derivedFlow = new FlowConfig(original);
         derivedFlow.setDynamic(true);
         derivedFlow.setPortGroup(null);
@@ -2369,6 +2445,7 @@ public class ForwardingRulesManager implements
     }
 
     private void addPortGroupFlows(PortGroupConfig config, Node node, PortGroup data) {
+     log.trace("addPortGroupFlows(PortGroupConfig config={}, Node node={}, PortGroup data={})",config,node,data );
         for (FlowConfig staticFlow : staticFlows.values()) {
             if (staticFlow.getPortGroup() == null) {
                 continue;
@@ -2383,6 +2460,7 @@ public class ForwardingRulesManager implements
     }
 
     private void removePortGroupFlows(PortGroupConfig config, Node node, PortGroup data) {
+     log.trace("removePortGroupFlows(PortGroupConfig config={}, Node node={}, PortGroup data={})",config,node,data );
         for (FlowConfig staticFlow : staticFlows.values()) {
             if (staticFlow.getPortGroup() == null) {
                 continue;
@@ -2398,7 +2476,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void portGroupChanged(PortGroupConfig config, Map<Node, PortGroup> data, boolean add) {
-        log.trace("PortGroup Changed for: {} Data: {}", config, portGroupData);
+     log.trace("portGroupChanged(PortGroupConfig config={}, Map<Node, PortGroup> data={}, boolean add={})" ,config,data,add);
         Map<Node, PortGroup> existingData = portGroupData.get(config);
         if (existingData != null) {
             for (Map.Entry<Node, PortGroup> entry : data.entrySet()) {
@@ -2430,6 +2508,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public boolean addPortGroupConfig(String name, String regex, boolean restore) {
+     log.trace("addPortGroupConfig(String name={}, String regex={}, boolean restore={})",name,regex,restore);
         PortGroupConfig config = portGroupConfigs.get(name);
         if (config != null) {
             return false;
@@ -2452,6 +2531,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public boolean delPortGroupConfig(String name) {
+     log.trace("delPortGroupConfig(String name={})",name );
         PortGroupConfig config = portGroupConfigs.get(name);
         if (config == null) {
             return false;
@@ -2466,10 +2546,12 @@ public class ForwardingRulesManager implements
 
     @Override
     public Map<String, PortGroupConfig> getPortGroupConfigs() {
+     log.trace("getPortGroupConfigs()" );
         return portGroupConfigs;
     }
 
     public boolean isPortGroupSupported() {
+     log.trace("isPortGroupSupported()" );
         if (portGroupProvider == null) {
             return false;
         }
@@ -2477,35 +2559,40 @@ public class ForwardingRulesManager implements
     }
 
     public void setIContainer(IContainer s) {
+     log.trace("setIContainer(IContainer s)" );
         this.container = s;
     }
 
     public void unsetIContainer(IContainer s) {
+     log.trace("unsetIContainer(IContainer s)" );
         if (this.container == s) {
             this.container = null;
         }
     }
 
     public void setConfigurationContainerService(IConfigurationContainerService service) {
-        log.trace("Got configuration service set request {}", service);
+     log.trace("setConfigurationContainerService(IConfigurationContainerService service)" );
         this.configurationService = service;
     }
 
     public void unsetConfigurationContainerService(IConfigurationContainerService service) {
-        log.trace("Got configuration service UNset request");
+     log.trace("unsetConfigurationContainerService(IConfigurationContainerService service)" );
         this.configurationService = null;
     }
 
     @Override
     public PortGroupProvider getPortGroupProvider() {
+     log.trace("getPortGroupProvider()" );
         return portGroupProvider;
     }
 
     public void unsetPortGroupProvider(PortGroupProvider portGroupProvider) {
+     log.trace("unsetPortGroupProvider(PortGroupProvider portGroupProvider)" );
         this.portGroupProvider = null;
     }
 
     public void setPortGroupProvider(PortGroupProvider portGroupProvider) {
+     log.trace("setPortGroupProvider(PortGroupProvider portGroupProvider)" );
         this.portGroupProvider = portGroupProvider;
         portGroupProvider.registerPortGroupChange(this);
         for (PortGroupConfig config : portGroupConfigs.values()) {
@@ -2514,19 +2601,23 @@ public class ForwardingRulesManager implements
     }
 
     public void setFrmAware(IForwardingRulesManagerAware obj) {
+     log.trace("setFrmAware(IForwardingRulesManagerAware obj)" );
         this.frmAware.add(obj);
     }
 
     public void unsetFrmAware(IForwardingRulesManagerAware obj) {
+     log.trace("unsetFrmAware(IForwardingRulesManagerAware obj)" );
         this.frmAware.remove(obj);
     }
 
     void setClusterContainerService(IClusterContainerServices s) {
+     log.trace("setClusterContainerService(IClusterContainerServices s)" );
         log.debug("Cluster Service set");
         this.clusterContainerService = s;
     }
 
     void unsetClusterContainerService(IClusterContainerServices s) {
+     log.trace("unsetClusterContainerService(IClusterContainerServices s)" );
         if (this.clusterContainerService == s) {
             log.debug("Cluster Service removed!");
             this.clusterContainerService = null;
@@ -2534,9 +2625,11 @@ public class ForwardingRulesManager implements
     }
 
     private String getContainerName() {
+        log.trace("getContainerName()" );
         if (container == null) {
             return GlobalConstants.DEFAULT.toString();
         }
+        log.trace("getContainerName returning {}",container.getName() );
         return container.getName();
     }
 
@@ -2546,6 +2639,7 @@ public class ForwardingRulesManager implements
      *
      */
     void init() {
+     log.trace("init()" );
 
         inContainerMode = false;
 
@@ -2607,6 +2701,7 @@ public class ForwardingRulesManager implements
                                     FlowEntryDistributionOrder fe = work.getFe();
                                     if (fe != null) {
                                         logsync.trace("Executing the workOrder {}", fe);
+    log.trace("Executing the workOrder {}", fe);
                                         Status gotStatus = null;
                                         FlowEntryInstall feiCurrent = fe.getEntry();
                                         FlowEntryInstall feiNew = workOrder.get(fe);
@@ -2625,6 +2720,8 @@ public class ForwardingRulesManager implements
                                         workOrder.remove(fe);
                                         logsync.trace(
                                                 "The workOrder has been executed and now the status is being returned {}", fe);
+    log.trace(
+                                                "The workOrder has been executed and now the status is being returned {}", fe);
                                         // Place the status
                                         workStatus.put(fe, gotStatus);
                                     } else {
@@ -2642,7 +2739,10 @@ public class ForwardingRulesManager implements
                             WorkStatusCleanup work = (WorkStatusCleanup) event;
                             FlowEntryDistributionOrder fe = work.getFe();
                             if (fe != null) {
-                                logsync.trace("The workStatus {} is being removed", fe);
+                                logsync.trace(
+                                        "The workStatus {} is being removed",
+                                        fe);
+    log.trace("The workStatus {} is being removed", fe);
                                 workStatus.remove(fe);
                             } else {
                                 log.warn("Not expected null WorkStatus", work);
@@ -2677,6 +2777,7 @@ public class ForwardingRulesManager implements
      *
      */
     void destroy() {
+     log.trace("destroy()" );
         // Interrupt the thread
         frmEventHandler.interrupt();
         // Clear the pendingEvents queue
@@ -2691,6 +2792,7 @@ public class ForwardingRulesManager implements
      *
      */
     void start() {
+     log.trace("start()" );
         /*
          * If running in default container, need to know if controller is in
          * container mode
@@ -2724,6 +2826,7 @@ public class ForwardingRulesManager implements
      * Function called by the dependency manager before Container is Stopped and Destroyed.
      */
     public void containerStop() {
+     log.trace("containerStop()" );
         uninstallAllFlowEntries(false);
     }
 
@@ -2733,6 +2836,7 @@ public class ForwardingRulesManager implements
      * calls
      */
     void stop() {
+     log.trace("stop()" );
         stopping = true;
         // Shutdown executor
         this.executor.shutdownNow();
@@ -2745,20 +2849,24 @@ public class ForwardingRulesManager implements
     }
 
     public void setFlowProgrammerService(IFlowProgrammerService service) {
+     log.trace("setFlowProgrammerService(IFlowProgrammerService service)" );
         this.programmer = service;
     }
 
     public void unsetFlowProgrammerService(IFlowProgrammerService service) {
+     log.trace("unsetFlowProgrammerService(IFlowProgrammerService service)" );
         if (this.programmer == service) {
             this.programmer = null;
         }
     }
 
     public void setSwitchManager(ISwitchManager switchManager) {
+     log.trace("setSwitchManager(ISwitchManager switchManager)" );
         this.switchManager = switchManager;
     }
 
     public void unsetSwitchManager(ISwitchManager switchManager) {
+     log.trace("unsetSwitchManager(ISwitchManager switchManager)" );
         if (this.switchManager == switchManager) {
             this.switchManager = null;
         }
@@ -2766,6 +2874,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void tagUpdated(String containerName, Node n, short oldTag, short newTag, UpdateType t) {
+     log.trace("tagUpdated(String containerName, Node n, short oldTag, short newTag, UpdateType t)" );
         if (!container.getName().equals(containerName)) {
             return;
         }
@@ -2773,6 +2882,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void containerFlowUpdated(String containerName, ContainerFlow previous, ContainerFlow current, UpdateType t) {
+     log.trace("containerFlowUpdated(String containerName, ContainerFlow previous, ContainerFlow current, UpdateType t)" );
         if (!container.getName().equals(containerName)) {
             return;
         }
@@ -2784,6 +2894,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void nodeConnectorUpdated(String containerName, NodeConnector nc, UpdateType t) {
+     log.trace("nodeConnectorUpdated(String containerName, NodeConnector nc, UpdateType t)" );
         if (!container.getName().equals(containerName)) {
             return;
         }
@@ -2812,6 +2923,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void containerModeUpdated(UpdateType update) {
+     log.trace("containerModeUpdated(UpdateType update)" );
         // Only default container instance reacts on this event
         if (!container.getName().equals(GlobalConstants.DEFAULT.toString())) {
             return;
@@ -2990,12 +3102,13 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status saveConfiguration() {
+     log.trace("saveConfiguration()" );
         return saveConfig();
     }
 
     @Override
     public void flowRemoved(Node node, Flow flow) {
-        log.trace("Received flow removed notification on {} for {}", node, flow);
+     log.trace("flowRemoved(Node node, Flow flow)" );
 
         // For flow entry identification, only node, match and priority matter
         FlowEntryInstall test = new FlowEntryInstall(new FlowEntry("", "", flow, node), null);
@@ -3037,11 +3150,12 @@ public class ForwardingRulesManager implements
 
     @Override
     public void flowErrorReported(Node node, long rid, Object err) {
-        log.trace("Got error {} for message rid {} from node {}", new Object[] { err, rid, node });
+     log.trace("flowErrorReported(Node node, long rid, Object err)" );
         pendingEvents.offer(new ErrorReportedEvent(rid, node, err));
     }
 
     private void processErrorEvent(ErrorReportedEvent event) {
+     log.trace("processErrorEvent(ErrorReportedEvent event)" );
         Node node = event.getNode();
         long rid = event.getRequestId();
         Object error = event.getError();
@@ -3101,6 +3215,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public Status solicitStatusResponse(Node node, boolean blocking) {
+     log.trace("solicitStatusResponse(Node node, boolean blocking)" );
         Status rv = new Status(StatusCode.INTERNALERROR);
 
         if (this.programmer != null) {
@@ -3115,27 +3230,32 @@ public class ForwardingRulesManager implements
     }
 
     public void unsetIConnectionManager(IConnectionManager s) {
+     log.trace("unsetIConnectionManager(IConnectionManager s)" );
         if (s == this.connectionManager) {
             this.connectionManager = null;
         }
     }
 
     public void setIConnectionManager(IConnectionManager s) {
+     log.trace("setIConnectionManager(IConnectionManager s)" );
         this.connectionManager = s;
     }
 
     public void unsetIContainerManager(IContainerManager s) {
+     log.trace("unsetIContainerManager(IContainerManager s)" );
         if (s == this.containerManager) {
             this.containerManager = null;
         }
     }
 
     public void setIContainerManager(IContainerManager s) {
+     log.trace("setIContainerManager(IContainerManager s)" );
         this.containerManager = s;
     }
 
     @Override
     public void entryCreated(Object key, String cacheName, boolean originLocal) {
+     log.trace("entryCreated but doing nothing" );
         /*
          * Do nothing
          */
@@ -3143,6 +3263,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void entryUpdated(Object key, Object new_value, String cacheName, boolean originLocal) {
+     log.trace("entryUpdated(Object key={}, Object new_value={}, String cacheName={}, boolean originLocal={})",key,new_value,cacheName,originLocal );
         /*
          * Streamline the updates for the per node and per group index databases
          */
@@ -3158,6 +3279,7 @@ public class ForwardingRulesManager implements
         }
         if (cacheName.equals(WORK_ORDER_CACHE)) {
             logsync.trace("Got a WorkOrderCacheUpdate for {}", key);
+    log.trace("Got a WorkOrderCacheUpdate for {}", key);
             /*
              * This is the case of one workOrder becoming available, so we need
              * to dispatch the work to the appropriate handler
@@ -3170,12 +3292,14 @@ public class ForwardingRulesManager implements
             Node n = fei.getNode();
             if (connectionManager.getLocalityStatus(n) == ConnectionLocality.LOCAL) {
                 logsync.trace("workOrder for fe {} processed locally", fe);
+    log.trace("workOrder for fe {} processed locally", fe);
                 // I'm the controller in charge for the request, queue it for
                 // processing
                 pendingEvents.offer(new WorkOrderEvent(fe, (FlowEntryInstall) new_value));
             }
         } else if (cacheName.equals(WORK_STATUS_CACHE)) {
             logsync.trace("Got a WorkStatusCacheUpdate for {}", key);
+    log.trace("Got a WorkStatusCacheUpdate for {}", key);
             /*
              * This is the case of one workOrder being completed and a status
              * returned
@@ -3190,6 +3314,7 @@ public class ForwardingRulesManager implements
                 FlowEntryDistributionOrderFutureTask fet = workMonitor.remove(fe);
                 if (fet != null) {
                     logsync.trace("workStatus response is for us {}", fe);
+    log.trace("workStatus response is for us {}", fe);
                     // Signal we got the status
                     fet.gotStatus(fe, workStatus.get(fe));
                     pendingEvents.offer(new WorkStatusCleanup(fe));
@@ -3200,6 +3325,7 @@ public class ForwardingRulesManager implements
 
     @Override
     public void entryDeleted(Object key, String cacheName, boolean originLocal) {
+     log.trace("entryDeleted(Object key={}, String cacheName={}, boolean originLocal={})",key,cacheName,originLocal );
         /*
          * Streamline the updates for the per node and per group index databases
          */
@@ -3213,6 +3339,7 @@ public class ForwardingRulesManager implements
      */
     @Override
     public List<FlowEntry> getFlowEntriesForNode(Node node) {
+     log.trace("getFlowEntriesForNode(Node node={})",node );
         List<FlowEntry> list = new ArrayList<FlowEntry>();
         if (node != null) {
             for (Map.Entry<FlowEntry, FlowEntry> entry : this.originalSwView.entrySet()) {
@@ -3229,6 +3356,7 @@ public class ForwardingRulesManager implements
      */
     @Override
     public List<FlowEntry> getInstalledFlowEntriesForNode(Node node) {
+     log.trace("getInstalledFlowEntriesForNode(Node node={})",node );
         List<FlowEntry> list = new ArrayList<FlowEntry>();
         if (node != null) {
             List<FlowEntryInstall> flowEntryInstallList = this.nodeFlows.get(node);

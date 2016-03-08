@@ -46,10 +46,10 @@ public class DataPacketServices implements IPluginInDataPacketService {
     @Override
     public void transmitDataPacket(RawPacket outPkt) {
         NodeConnector nc = outPkt.getOutgoingNodeConnector();
-        if (connectionOutService != null && connectionOutService.isLocal(nc.getNode())) {
+        //if (connectionOutService != null && connectionOutService.isLocal(nc.getNode())) {
             this.iDataPacketMux.transmitDataPacket(outPkt);
-        } else {
-            logger.debug("{} is dropped in the controller "+outPkt);
-        }
+        //} else {
+        //    logger.debug("{} is dropped in the controller ",outPkt);
+        //}
     }
 }

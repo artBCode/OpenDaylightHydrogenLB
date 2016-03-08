@@ -9,9 +9,11 @@
 
 package org.opendaylight.controller.protocol_plugin.openflow.core.internal;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.opendaylight.controller.protocol_plugin.openflow.core.ISwitch;
 import org.openflow.protocol.OFMessage;
-
+ 
 public class SwitchEvent {
 
     public static enum SwitchEventType {
@@ -22,12 +24,15 @@ public class SwitchEvent {
     private ISwitch sw;
     private OFMessage msg;
     private int priority;
+    final static AtomicLong seq = new AtomicLong();
+    private long arrivalID;
 
     public SwitchEvent(SwitchEventType type, ISwitch sw, OFMessage msg, int priority) {
         this.eventType = type;
         this.sw = sw;
         this.msg = msg;
         this.priority = priority;
+        this.arrivalID=seq.getAndIncrement();
     }
 
     public SwitchEventType getEventType() {
@@ -70,5 +75,9 @@ public class SwitchEvent {
             s = "?" + this.eventType.ordinal() + "?";
         }
         return "Switch Event: " + s;
+    }
+
+    public long getArrivalID() {
+        return arrivalID;
     }
 }

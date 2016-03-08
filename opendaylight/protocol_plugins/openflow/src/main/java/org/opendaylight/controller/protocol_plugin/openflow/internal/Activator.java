@@ -9,9 +9,13 @@
 package org.opendaylight.controller.protocol_plugin.openflow.internal;
 
 import java.util.Dictionary;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 import org.apache.felix.dm.Component;
+import org.opendaylight.controller.clustering.services.ICacheUpdateAware;
+import org.opendaylight.controller.clustering.services.IClusterGlobalServices;
 import org.opendaylight.controller.protocol_plugin.openflow.IDataPacketListen;
 import org.opendaylight.controller.protocol_plugin.openflow.IDataPacketMux;
 import org.opendaylight.controller.protocol_plugin.openflow.IDiscoveryListener;
@@ -28,6 +32,8 @@ import org.opendaylight.controller.protocol_plugin.openflow.ITopologyServiceShim
 import org.opendaylight.controller.protocol_plugin.openflow.core.IController;
 import org.opendaylight.controller.protocol_plugin.openflow.core.IMessageListener;
 import org.opendaylight.controller.protocol_plugin.openflow.core.internal.Controller;
+import org.opendaylight.controller.protocol_plugin.openflow.migration.IControllerMigrationService;
+import org.opendaylight.controller.protocol_plugin.openflow.migration.ILocalityMigrationCore;
 import org.opendaylight.controller.sal.connection.IPluginInConnectionService;
 import org.opendaylight.controller.sal.connection.IPluginOutConnectionService;
 import org.opendaylight.controller.sal.core.ComponentActivatorAbstractBase;
@@ -38,6 +44,7 @@ import org.opendaylight.controller.sal.flowprogrammer.IPluginInFlowProgrammerSer
 import org.opendaylight.controller.sal.flowprogrammer.IPluginOutFlowProgrammerService;
 import org.opendaylight.controller.sal.inventory.IPluginInInventoryService;
 import org.opendaylight.controller.sal.inventory.IPluginOutInventoryService;
+import org.opendaylight.controller.sal.packet.IDataPacketService;
 import org.opendaylight.controller.sal.packet.IPluginInDataPacketService;
 import org.opendaylight.controller.sal.packet.IPluginOutDataPacketService;
 import org.opendaylight.controller.sal.reader.IPluginInReadService;
@@ -243,12 +250,37 @@ public class Activator extends ComponentActivatorAbstractBase {
         if (imp.equals(Controller.class)) {
             logger.debug("Activator configureGlobalInstance( ) is called");
             Dictionary<String, Object> props = new Hashtable<String, Object>();
+            Set<String> propSet = new HashSet<String>();
+            propSet.add(Controller.loadStatisticsRequestCacheName);
+            props.put("cachenames", propSet);
+            props.put(GlobalConstants.PROTOCOLPLUGINTYPE.toString(), "OVS");
+            props.put("scope", "Global");
             props.put("name", "Controller");
-            props.put(GlobalConstants.PROTOCOLPLUGINTYPE.toString(), Node.NodeIDType.OPENFLOW);
+ 
             c.setInterface(new String[] { IController.class.getName(),
-                                          IPluginInConnectionService.class.getName()},
+                                          IPluginInConnectionService.class.getName(),
+                                          IControllerMigrationService.class.getName(),
+                                          ILocalityMigrationCore.class.getName(),
+                                          ICacheUpdateAware.class.getName()},
                                           props);
+           
+            
+            c.add(createServiceDependency()
+                    .setService(IClusterGlobalServices.class)
+                    .setCallbacks("setClusterServices", "unsetClusterServices")
+                    .setRequired(true));
+            c.add(createServiceDependency()
+                    .setService(IPluginInFlowProgrammerService.class)
+                    .setCallbacks("setFlowProgrammingService", "unsetFlowProgrammingService")
+                    .setRequired(true));
+            c.add(createServiceDependency()
+                    .setService(IDataPacketService.class)
+                    .setCallbacks("setDataPacketService",
+                            "unsetDataPacketService").setRequired(true));
+            
+            
         }
+        
 
         if (imp.equals(FlowProgrammerService.class)) {
             // export the service to be used by SAL

@@ -689,7 +689,7 @@ public class OFStatisticsManager implements IOFStatisticsManager, IInventoryShim
             Object result = sw.getStatistics(req);
 
             if (result == null) {
-                log.warn("Request Timed Out for ({}) from switch {}", type,
+                log.debug("Request Timed Out for ({}) from switch {}", type,
                         HexString.toHexString(switchId));
             } else if (result instanceof OFError) {
                 log.warn("Switch {} failed to handle ({}) stats request: {}",

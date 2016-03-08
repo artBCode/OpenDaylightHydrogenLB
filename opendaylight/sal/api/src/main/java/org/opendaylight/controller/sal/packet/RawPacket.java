@@ -16,6 +16,7 @@
  */
 package org.opendaylight.controller.sal.packet;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -211,4 +212,77 @@ public class RawPacket {
     public TimeStamp getCopyTime() {
         return this.copyTime;
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((copyTime == null) ? 0 : copyTime.hashCode());
+        result = prime * result + ((encap == null) ? 0 : encap.hashCode());
+        result = prime
+                * result
+                + ((incomingNodeConnector == null) ? 0 : incomingNodeConnector
+                        .hashCode());
+        result = prime * result
+                + ((incomingTime == null) ? 0 : incomingTime.hashCode());
+        result = prime
+                * result
+                + ((outgoingNodeConnector == null) ? 0 : outgoingNodeConnector
+                        .hashCode());
+        result = prime * result + Arrays.hashCode(packetData);
+        result = prime * result + ((props == null) ? 0 : props.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        RawPacket other = (RawPacket) obj;
+        if (copyTime == null) {
+            if (other.copyTime != null)
+                return false;
+        } else if (!copyTime.equals(other.copyTime))
+            return false;
+        if (encap != other.encap)
+            return false;
+        if (incomingNodeConnector == null) {
+            if (other.incomingNodeConnector != null)
+                return false;
+        } else if (!incomingNodeConnector.equals(other.incomingNodeConnector))
+            return false;
+        if (incomingTime == null) {
+            if (other.incomingTime != null)
+                return false;
+        } else if (!incomingTime.equals(other.incomingTime))
+            return false;
+        if (outgoingNodeConnector == null) {
+            if (other.outgoingNodeConnector != null)
+                return false;
+        } else if (!outgoingNodeConnector.equals(other.outgoingNodeConnector))
+            return false;
+        if (!Arrays.equals(packetData, other.packetData))
+            return false;
+        if (props == null) {
+            if (other.props != null)
+                return false;
+        } else if (!props.equals(other.props))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "RawPacket [packetData=" + Arrays.toString(packetData)
+                + ", encap=" + encap + ", incomingTime=" + incomingTime
+                + ", copyTime=" + copyTime + ", props=" + props
+                + ", incomingNodeConnector=" + incomingNodeConnector
+                + ", outgoingNodeConnector=" + outgoingNodeConnector + "]";
+    }
+    
 }

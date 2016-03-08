@@ -19,10 +19,13 @@
 
 package org.opendaylight.controller.connectionmanager.internal;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -39,6 +42,7 @@ import org.opendaylight.controller.connectionmanager.ConnectionMgmtScheme;
 import org.opendaylight.controller.connectionmanager.IConnectionManager;
 import org.opendaylight.controller.connectionmanager.scheme.AbstractScheme;
 import org.opendaylight.controller.connectionmanager.scheme.SchemeFactory;
+import org.opendaylight.controller.protocol_plugin.openflow.migration.ILocalityMigrationCore;
 import org.opendaylight.controller.sal.connection.ConnectionConstants;
 import org.opendaylight.controller.sal.connection.ConnectionLocality;
 import org.opendaylight.controller.sal.connection.IConnectionListener;
@@ -51,8 +55,12 @@ import org.opendaylight.controller.sal.inventory.IInventoryService;
 import org.opendaylight.controller.sal.inventory.IListenInventoryUpdates;
 import org.opendaylight.controller.sal.utils.Status;
 import org.opendaylight.controller.sal.utils.StatusCode;
+import org.opendaylight.ovsdb.plugin.IConnectionServiceInternal;
+import org.opendaylight.ovsdb.plugin.InventoryServiceInternal;
+import org.opendaylight.ovsdb.plugin.OVSDBConfigService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +76,11 @@ public class ConnectionManager implements IConnectionManager,
     private Thread connectionEventThread;
     private BlockingQueue<ConnectionMgmtEvent> connectionEvents;
     private IInventoryService inventoryService;
+    private IConnectionServiceInternal ovsdbConnectionService;
+    private InventoryServiceInternal ovsdbInventoryService;
+    private OVSDBConfigService ovsdbConfigService;
+    private ILocalityMigrationCore localityMigrationService;
+   
 
     public void setClusterServices(IClusterGlobalServices i) {
         this.clusterServices = i;
@@ -76,6 +89,50 @@ public class ConnectionManager implements IConnectionManager,
     public void unsetClusterServices(IClusterGlobalServices i) {
         if (this.clusterServices == i) {
             this.clusterServices = null;
+        }
+    }
+
+    public void setOvsdbConnectionService(IConnectionServiceInternal cs) {
+        logger.debug("setOvsdbConnectionService");
+        ovsdbConnectionService = cs;
+    }
+
+    public void unsetOvsdbConnectionService(IConnectionServiceInternal cs) {
+        if (this.ovsdbConnectionService == cs) {
+            ovsdbConnectionService = null;
+        }
+    }
+    
+    public void setILocalityMigrationCore(ILocalityMigrationCore lms) {
+        logger.debug("setILocalityMigrationCore");
+        this.localityMigrationService = lms;
+    }
+
+    public void unsetILocalityMigrationCore(ILocalityMigrationCore lms) {
+        if (this.localityMigrationService == lms) {
+            this.localityMigrationService = null;
+        }
+    }
+    
+    public void setOvsdbInventoryService(InventoryServiceInternal is) {
+        logger.debug("setOvsdbInventoryService");
+        ovsdbInventoryService = is;
+    }
+
+    public void unsetOvsdbInventoryService(InventoryServiceInternal is) {
+        if (this.ovsdbInventoryService == is) {
+            ovsdbInventoryService = null;
+        }
+    }
+
+    public void setOvsdbConfigService(OVSDBConfigService cs) {
+        logger.debug("setOvsdbConfigService");
+        ovsdbConfigService = cs;
+    }
+
+    public void unsetOvsdbConfigService(OVSDBConfigService cs) {
+        if (this.ovsdbConfigService == cs) {
+            ovsdbConfigService = null;
         }
     }
 
@@ -90,16 +147,17 @@ public class ConnectionManager implements IConnectionManager,
     }
 
     public void setInventoryService(IInventoryService service) {
-        logger.trace("Got inventory service set request {}", service);
+        logger.debug("Got inventory service set request {}", service);
         this.inventoryService = service;
     }
 
     public void unsetInventoryService(IInventoryService service) {
-        logger.trace("Got a service UNset request");
+        logger.debug("Got a service UNset request");
         this.inventoryService = null;
     }
 
     private void getInventories() {
+        logger.debug("getInventories has been called");
         Map<Node, Map<String, Property>> nodeProp = this.inventoryService
                 .getNodeProps();
         for (Map.Entry<Node, Map<String, Property>> entry : nodeProp.entrySet()) {
@@ -115,6 +173,8 @@ public class ConnectionManager implements IConnectionManager,
 
         Map<NodeConnector, Map<String, Property>> nodeConnectorProp = this.inventoryService
                 .getNodeConnectorProps();
+        logger.debug("inventoryService...nodeConnectors={}",
+                this.inventoryService.getNodeConnectorProps());
         for (Map.Entry<NodeConnector, Map<String, Property>> entry : nodeConnectorProp
                 .entrySet()) {
             Map<String, Property> propMap = entry.getValue();
@@ -122,6 +182,8 @@ public class ConnectionManager implements IConnectionManager,
             for (Property property : propMap.values()) {
                 props.add(property);
             }
+            logger.debug("calling updateNodeConnector(entry.getKey()={}, UpdateType.ADDED={}, "
+                    + "props={}) locally",entry.getKey(),UpdateType.ADDED,props);
             updateNodeConnector(entry.getKey(), UpdateType.ADDED, props);
         }
     }
@@ -134,6 +196,9 @@ public class ConnectionManager implements IConnectionManager,
         notifyClusterViewChanged();
         // Should pull the Inventory updates in case we missed it
         getInventories();
+        
+        
+        
     }
 
     public void init() {
@@ -171,7 +236,7 @@ public class ConnectionManager implements IConnectionManager,
     public ConnectionMgmtScheme getActiveScheme() {
         return activeScheme;
     }
-
+    
     @Override
     public Set<Node> getNodes(InetAddress controller) {
         AbstractScheme scheme = schemes.get(activeScheme);
@@ -187,17 +252,26 @@ public class ConnectionManager implements IConnectionManager,
             return null;
         return scheme.getNodes();
     }
-
+    /**one of the uses of this method is to refuse PACKET_IN messages if not "master"*/
     @Override
     public boolean isLocal(Node node) {
+        
         AbstractScheme scheme = schemes.get(activeScheme);
-        if (scheme == null)
+        if (scheme == null){
+            logger.trace("isLocal is returning false. Scheme null");
             return false;
-        return scheme.isLocal(node);
+        }
+        
+        boolean rvConnMan=scheme.isLocal(node);
+  
+        boolean rv=localityMigrationService.localityMigrationCore(node,rvConnMan);
+        logger.trace("isLocal is returning {}. ConnManager would have returned {}",rv,rvConnMan);        
+        return rv;
     }
 
     @Override
     public ConnectionLocality getLocalityStatus(Node node) {
+        logger.debug("getLocalityStatus node={} has been called",node);
         AbstractScheme scheme = schemes.get(activeScheme);
         if (scheme == null)
             return ConnectionLocality.NOT_CONNECTED;
@@ -238,7 +312,7 @@ public class ConnectionManager implements IConnectionManager,
             break;
         }
     }
-
+   
     @Override
     public void coordinatorChanged() {
         notifyClusterViewChanged();
@@ -247,6 +321,7 @@ public class ConnectionManager implements IConnectionManager,
     @Override
     public Node connect(String connectionIdentifier,
             Map<ConnectionConstants, String> params) {
+        logger.debug("connect connectionIdentifier={} params={}",connectionIdentifier,params.toString());
         if (connectionService == null)
             return null;
         Node node = connectionService.connect(connectionIdentifier, params);
@@ -259,6 +334,8 @@ public class ConnectionManager implements IConnectionManager,
     @Override
     public Node connect(String type, String connectionIdentifier,
             Map<ConnectionConstants, String> params) {
+        logger.debug("connect this controller to a node with type={} connectionIdentifier={} params={}",
+                type,connectionIdentifier,params.toString());
         if (connectionService == null)
             return null;
         Node node = connectionService.connect(connectionIdentifier, params);
@@ -270,6 +347,7 @@ public class ConnectionManager implements IConnectionManager,
 
     @Override
     public Status disconnect(Node node) {
+        logger.debug("disconnect node={} from this controller",node);
         if (node == null)
             return new Status(StatusCode.BADREQUEST);
         if (connectionService == null)
@@ -285,8 +363,10 @@ public class ConnectionManager implements IConnectionManager,
 
     @Override
     public void entryCreated(Node key, String cacheName, boolean originLocal) {
+        logger.debug("entryCreated key={} in cacheName={} originLocal={}",key,cacheName,originLocal);
         if (originLocal)
             return;
+        
     }
 
     /*
@@ -294,11 +374,14 @@ public class ConnectionManager implements IConnectionManager,
      * update callbacks. Hence, using a scratch local cache to maintain the
      * existing state.
      */
+    /**map node : controllers*/
     private ConcurrentMap<Node, Set<InetAddress>> existingConnections = new ConcurrentHashMap<Node, Set<InetAddress>>();
 
     @Override
     public void entryUpdated(Node node, Set<InetAddress> newControllers,
             String cacheName, boolean originLocal) {
+        logger.debug("entryUpdated node={} newControllers={} cachename={}, originLocal={}",
+                node,newControllers,cacheName, String.valueOf(originLocal));
         if (originLocal)
             return;
         Set<InetAddress> existingControllers = existingConnections.get(node);
@@ -320,6 +403,8 @@ public class ConnectionManager implements IConnectionManager,
 
     @Override
     public void entryDeleted(Node key, String cacheName, boolean originLocal) {
+        logger.debug("entryDeleted key={} from cacheName={} originLocal={}",
+                key.toString(),cacheName,String.valueOf(originLocal));
         if (originLocal)
             return;
         logger.debug("Deleted entry {} from cache : {}", key, cacheName);
@@ -339,6 +424,7 @@ public class ConnectionManager implements IConnectionManager,
     }
 
     private void notifyClusterViewChanged() {
+       
         ConnectionMgmtEvent event = new ConnectionMgmtEvent(
                 ConnectionMgmtEventType.CLUSTER_VIEW_CHANGED, null);
         enqueueConnectionEvent(event);
@@ -385,6 +471,13 @@ public class ConnectionManager implements IConnectionManager,
             }
         }
     }
+    @Override
+    public Set<InetAddress> getControllers(Node node) {
+        AbstractScheme scheme = schemes.get(activeScheme);
+        if (scheme == null)
+            return Collections.emptySet();
+        return scheme.getControllers(node);
+    }
 
     private void registerWithOSGIConsole() {
         BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass())
@@ -406,6 +499,25 @@ public class ConnectionManager implements IConnectionManager,
             return;
         }
         activeScheme = scheme;
+    }
+    
+    public void _mapNodeControllers(CommandInterpreter ci) {
+        AbstractScheme scheme = schemes.get(activeScheme);
+        if (scheme == null){
+            ci.println("scheme is null. No map can be shown");
+            return;
+        }
+        ci.print(scheme.mapNodeControllersToString());
+    }
+    
+    public void _mapControllerNodes(CommandInterpreter ci) {
+        
+        AbstractScheme scheme = schemes.get(activeScheme);
+        if (scheme == null){
+            ci.println("scheme is null. No map can be shown");
+            return;
+        }
+        ci.print(scheme.mapControllerNodesToString());
     }
 
     public void _printNodes(CommandInterpreter ci) {
@@ -431,7 +543,8 @@ public class ConnectionManager implements IConnectionManager,
             logger.error("An error occured", e);
         }
     }
-
+    
+    
     @Override
     public String getHelp() {
         StringBuffer help = new StringBuffer();
@@ -440,12 +553,17 @@ public class ConnectionManager implements IConnectionManager,
         help.append("\t printNodes [<controller>]            - Print connected nodes\n");
         return help.toString();
     }
+    
+    
+    
+    
 
-    @Override
-    public Set<InetAddress> getControllers(Node node) {
-        AbstractScheme scheme = schemes.get(activeScheme);
-        if (scheme == null)
-            return Collections.emptySet();
-        return scheme.getControllers(node);
-    }
+    
+    
+    
+    
+
+
+
+  
 }
